@@ -1,0 +1,59 @@
+# .pre-commit-config.yaml
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
+repos:
+  # -- check headers --
+  - repo: local
+    hooks:
+      - id: fix-headers
+        name: Fix file headers
+        entry: scripts/fix_headers.py
+        language: python
+        files: '\.(py|sh|bash|zsh|fish|ps1|pl|rb|php|yaml|yml|toml|ini|cfg|conf|env|json5|hcl|tf|sql|lua)$'
+        types: [file]
+        args: [--quiet]
+
+  # --- basic hygiene ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace        # trim trailing spaces
+        args: [--markdown-linebreak-ext=md]
+
+      - id: end-of-file-fixer          # ensure newline at EOF
+      - id: fix-byte-order-marker      # remove BOM
+
+      # --- config validity ---
+      - id: check-yaml                 # validate yaml
+      - id: check-toml                 # validate toml
+      - id: check-json                 # validate json
+
+      # --- git safety ---
+      - id: check-merge-conflict       # no <<<<<<<
+      - id: check-added-large-files    # avoid huge files
+        args: ["--maxkb=1024"]
+
+      # --- security ---
+      - id: detect-private-key         # prevent key leaks
+
+      # --- python ---
+      - id: debug-statements           # no breakpoint()/pdb
+
+  # --- ruff (linting and formatting) ---
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.8
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # --- uv (lockfile sync) ---
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.2
+    hooks:
+      - id: uv-lock                    # keep uv.lock in sync

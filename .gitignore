@@ -1,0 +1,181 @@
+# Comprehensive .gitignore for Python projects
+# Generated with focus on readability and minimal necessary comments
+
+
+# ============================================
+# Python
+# ============================================
+
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions (compiled)
+*.so
+
+# Packaging / distribution artifacts
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Testing and coverage
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage.*
+*.cover
+.hypothesis/
+cover/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+
+# ============================================
+# Operating System
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+
+# ============================================
+# Editors & IDEs
+# ============================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs (PyCharm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+
+# Emacs
+\#*
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+
+# ============================================
+# Project Specific
+# ============================================
+
+# Environment variables
+.env.local
+.env.*.local
+
+# Local configuration
+config/local*
+*.local.yaml
+*.local.yml
+*.local.json
+*.local.toml
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+*.cache
+.agents/
+
+# Tool‑specific
+.specify/
+.opencode/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Logs
+*.log
+
+
+# ============================================
+# Dependencies & Build
+# ============================================
+
+# Node (if frontend tooling is present)
+node_modules/
+
+# Lock files (keep only uv.lock)
+*.lock
+!uv.lock
+
+# uv internal cache
+.uv/
+
+
+# ============================================
+# Security & Secrets
+# ============================================
+
+*.pem
+*.key
+*.crt
+secrets.yaml
+secrets.yml
+credentials.json

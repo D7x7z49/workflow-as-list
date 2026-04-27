@@ -1,0 +1,13 @@
+# ruff.toml
+
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

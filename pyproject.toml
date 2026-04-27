@@ -1,0 +1,16 @@
+# pyproject.toml
+[project]
+name = "waf"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+]

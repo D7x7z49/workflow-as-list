@@ -1,0 +1,184 @@
+(* ========================================================================= *)
+(* WORKFLOWASLIST FORMAL SYNTAX SPECIFICATION                                *)
+(* ========================================================================= *)
+(*
+   REFERENCE: ISO/IEC 14977:1996(E) - Extended Backus-Naur Form
+   NOTE: This EBNF specification is for documentation only.
+         WorkflowAsList requires no parser - LLM reads and follows directly.
+
+   DESIGN PRINCIPLES:
+   - Concise (Information Theory): Remove redundancy, preserve meaning
+   - Practical (Set Theory): Bounded scope, minimal complete
+   - Elegant (Logical Flow): Logical coherence, consistent ordering
+   - Uniform (Text Stream): All content is text, identical syntax for same things
+*)
+
+(* ========================================================================= *)
+(* SECTION 1: CORE STRUCTURE                                                  *)
+(* ========================================================================= *)
+
+workflow = { line } ;
+
+line = line_content , eol ;
+
+eol = "\n" | "\r\n" ;
+
+(* ========================================================================= *)
+(* SECTION 2: LINE CONTENT                                                    *)
+(* ========================================================================= *)
+
+line_content = comment_line | variable_line | step_line | import_line | empty_line ;
+
+empty_line = ;
+
+comment_line = "#" , { character - newline_char } ;
+
+(* ========================================================================= *)
+(* SECTION 3: VARIABLE DEFINITION                                             *)
+(* ========================================================================= *)
+
+variable_line = ":" , identifier , "=" , value ;
+
+value = value_item , { value_item } ;
+value_item = string | number | boolean | substitution ;
+
+string = '"' , { character - ( '"' | newline_char ) } , '"' ;
+
+number = digit , { digit } ;
+
+boolean = "true" | "false" ;
+
+(* ========================================================================= *)
+(* SECTION 4: SUBSTITUTION                                                    *)
+(* ========================================================================= *)
+
+substitution = "${" , identifier , [ "!" , text ] , "}" ;
+
+(* ========================================================================= *)
+(* SECTION 5: STEP LINE                                                       *)
+(* ========================================================================= *)
+
+step_line = "-" , [ tag ] , [ control_prefix ] , text ;
+
+tag = "(" , identifier , ")" ;
+
+control_prefix = ( "@" , identifier , ( "!" | "?" ) ) | ( "!" | "?" ) ;
+
+(* ========================================================================= *)
+(* SECTION 6: IMPORT LINE                                                     *)
+(* ========================================================================= *)
+
+import_line = ">" , path ;
+
+path = { character - newline_char } ;
+
+(* NOTE: path can be a local file path (relative/absolute) or a remote URL   *)
+(*       starting with http:// or https://. Resolution is runtime‑handled.   *)
+
+(* ========================================================================= *)
+(* SECTION 7: TEXT                                                            *)
+(* ========================================================================= *)
+
+text = { character - newline_char } ;
+
+(* ========================================================================= *)
+(* SECTION 8: IDENTIFIER                                                      *)
+(* ========================================================================= *)
+
+identifier = letter , { letter | digit | "-" } ;
+
+(* ========================================================================= *)
+(* SECTION 9: CHARACTER SET                                                   *)
+(* ========================================================================= *)
+
+character = letter | digit | symbol | " " ;
+
+newline_char = "\n" | "\r" ;
+
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M"
+       | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+       | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
+       | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
+
+digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+
+symbol = "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | ","
+       | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "["
+       | "\\" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~" ;
+
+(* ========================================================================= *)
+(* SECTION 10: CONSTRAINTS AND RULES                                          *)
+(* ========================================================================= *)
+
+(* RULE 1: Every non‑empty line starts with ':' or '-' or '>' after whitespace removal. *)
+(* RULE 2: Step syntax: - [(tag)] [@tag] [!/?] text *)
+(* RULE 3: If @tag present, ! or ? must follow immediately. *)
+(* RULE 4: ! means shell command, ? means boolean question. *)
+(* RULE 5: No special prefix means plain agent message. *)
+(* RULE 6: Text is never quoted; it runs to end of line. *)
+(* RULE 7: String values in variable definitions must be double‑quoted. *)
+(* RULE 8: ! text in steps and ${ref ! text} share the same text definition. *)
+(* RULE 9: ? constrains agent to reply true/false. *)
+(* RULE 10: > imports another .workflow.list file; path may be local or URL.  *)
+
+(* ========================================================================= *)
+(* SECTION 11: EXAMPLES                                                       *)
+(* ========================================================================= *)
+
+(* EXAMPLE 1: Variable definition
+   :retries = 0
+   :greeting = "hello"
+*)
+
+(* EXAMPLE 2: Plain step (agent message)
+   - Read project structure
+*)
+
+(* EXAMPLE 3: Step with tag
+   - (analyze) Analyze source code
+*)
+
+(* EXAMPLE 4: Step with shell command
+   - ! ls -al
+   - ! rg "pattern" src/
+*)
+
+(* EXAMPLE 5: Step with boolean question
+   - ? Data backed up, continue?
+*)
+
+(* EXAMPLE 6: Step with jump target and question
+   - (check) @retry ? Errors fixed?
+*)
+
+(* EXAMPLE 7: Step with jump target and command
+   - @init ! python setup.py
+*)
+
+(* EXAMPLE 8: Variable with substitution
+   :result = ${analyze ! grep "error"}
+   :count = ${retries}
+*)
+
+(* EXAMPLE 9: Import line
+   > ./common/setup.workflow.list
+   > https://example.com/workflows/shared.workflow.list
+*)
+
+(* EXAMPLE 10: Full workflow
+   :attempt = 0
+   - (start) Begin processing
+   - ! ls ./data
+   > ./validate.workflow.list
+   - (validate) Check data integrity
+   - @validate ? Data valid?
+   - (fix) @retry ! sed -i 's/bug/fix/g' ./data
+   - (retry) Attempt fix
+   :attempt = ${attempt} + 1
+   - @retry ! python validate.py
+   - ? Retry again?
+*)
+
+(* ========================================================================= *)
+(* END OF SPECIFICATION                                                       *)
+(* ========================================================================= *)
