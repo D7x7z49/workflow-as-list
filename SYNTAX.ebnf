@@ -2,181 +2,239 @@
 (* WORKFLOWASLIST FORMAL SYNTAX SPECIFICATION                                *)
 (* ========================================================================= *)
 (*
-   REFERENCE: ISO/IEC 14977:1996(E) - Extended Backus-Naur Form
-   NOTE: This EBNF specification is for documentation only.
-         WorkflowAsList requires no parser - LLM reads and follows directly.
+   REFERENCE.
+      ISO/IEC 14977:1996(E) - Extended Backus-Naur Form
+   NOTE.
+      This EBNF specification is for documentation only.
+      WorkflowAsList requires no parser. LLM reads and follows directly.
 
-   DESIGN PRINCIPLES:
-   - Concise (Information Theory): Remove redundancy, preserve meaning
-   - Practical (Set Theory): Bounded scope, minimal complete
-   - Elegant (Logical Flow): Logical coherence, consistent ordering
-   - Uniform (Text Stream): All content is text, identical syntax for same things
+   DESIGN PRINCIPLES.
+   - Concise. Information Theory. Remove redundancy, preserve meaning.
+   - Practical. Set Theory. Bounded scope, minimal complete.
+   - Elegant. Logical Flow. Logical coherence, consistent ordering.
+   - Uniform. Text Stream. All content is text, identical syntax for same things.
 *)
 
 (* ========================================================================= *)
-(* SECTION 1: CORE STRUCTURE                                                  *)
+(* SECTION 1. TOP-LEVEL STRUCTURE                                            *)
 (* ========================================================================= *)
 
 workflow = { line } ;
-
-line = line_content , eol ;
-
-eol = "\n" | "\r\n" ;
+line     = line_content , eol ;
+eol      = "\n" | "\r\n" ;
 
 (* ========================================================================= *)
-(* SECTION 2: LINE CONTENT                                                    *)
+(* SECTION 2. LINE CONTENT                                                    *)
 (* ========================================================================= *)
 
-line_content = comment_line | variable_line | step_line | import_line | empty_line ;
+(*
+   LINE CONTENT.
+   - Top-level lines are empty, comment, import, variable, or step.
+   - Indented lines are only comment or step. Each indent level adds two spaces.
+*)
+
+line_content = empty_line
+             | comment_line
+             | import_line
+             | variable_line
+             | step_line
+             | indented_content ;
+
+indented_content = indent , ( comment_line | step_line ) ;
+indent           = { "  " } ;
+
+(* ========================================================================= *)
+(* SECTION 3. EMPTY LINE                                                      *)
+(* ========================================================================= *)
 
 empty_line = ;
 
-comment_line = "#" , { character - newline_char } ;
-
 (* ========================================================================= *)
-(* SECTION 3: VARIABLE DEFINITION                                             *)
+(* SECTION 4. COMMENT LINE                                                    *)
 (* ========================================================================= *)
 
-variable_line = ":" , identifier , "=" , value ;
-
-value = value_item , { value_item } ;
-value_item = string | number | boolean | substitution ;
-
-string = '"' , { character - ( '"' | newline_char ) } , '"' ;
-
-number = digit , { digit } ;
-
-boolean = "true" | "false" ;
+comment_line = "#" , plain_text ;
 
 (* ========================================================================= *)
-(* SECTION 4: SUBSTITUTION                                                    *)
+(* SECTION 5. IMPORT LINE                                                     *)
 (* ========================================================================= *)
 
-substitution = "${" , identifier , [ "!" , text ] , "}" ;
+(*
+   FORMAT.
+      Path is local (relative or absolute) or a remote URL.
+      Remote URLs start with http. or https.
+      Resolution is runtime-handled.
+   USAGE.
+      The alias creates a namespace.
+      Internal tags are accessed via alias.identifier, e.g. ${lib.tag}.
+*)
+
+import_line = ">" , "(" , identifier , ")" , path ;
+
+path = text ;
 
 (* ========================================================================= *)
-(* SECTION 5: STEP LINE                                                       *)
+(* SECTION 6. VARIABLE LINE                                                   *)
 (* ========================================================================= *)
+
+variable_line = ":" , identifier , "=" , text ;
+
+(* ========================================================================= *)
+(* SECTION 7. STEP LINE                                                       *)
+(* ========================================================================= *)
+
+(*
+   Step execution is determined by control prefix.
+   Exclamation invokes shell and returns success or failure.
+   Question invokes agent and returns true or false.
+   Both forms produce a boolean result.
+
+   If reference is present, the boolean result controls jump.
+   True causes jump to the target tag.
+   False continues to next step.
+
+   Reference in this context resolves to a step tag only.
+   It is not used as a value.
+*)
 
 step_line = "-" , [ tag ] , [ control_prefix ] , text ;
 
-tag = "(" , identifier , ")" ;
-
-control_prefix = ( "@" , identifier , ( "!" | "?" ) ) | ( "!" | "?" ) ;
-
-(* ========================================================================= *)
-(* SECTION 6: IMPORT LINE                                                     *)
-(* ========================================================================= *)
-
-import_line = ">" , path ;
-
-path = { character - newline_char } ;
-
-(* NOTE: path can be a local file path (relative/absolute) or a remote URL   *)
-(*       starting with http:// or https://. Resolution is runtime‑handled.   *)
+tag            = "(" , identifier , ")" ;
+control_prefix = ( "@" , reference , ( "!" | "?" ) ) | ( "!" | "?" ) ;
 
 (* ========================================================================= *)
-(* SECTION 7: TEXT                                                            *)
+(* SECTION 8. TEXT AND PLAIN TEXT                                             *)
 (* ========================================================================= *)
 
-text = { character - newline_char } ;
+text         = { text_element } ;
+text_element = plain_text | substitution ;
 
 (* ========================================================================= *)
-(* SECTION 8: IDENTIFIER                                                      *)
+(* SECTION 9. SUBSTITUTION                                                    *)
 (* ========================================================================= *)
 
+(*
+   Substitution resolves a reference to text.
+   The result is inserted into the surrounding text.
+
+   If exclamation is present, a shell transformation is applied.
+   The reference value is passed as input to the command.
+   The command output replaces the substitution.
+
+   Exclamation here does not produce a boolean result.
+   It performs text transformation only.
+*)
+
+substitution = "${" , reference , [ "!" , text ] , "}" ;
+
+(* ========================================================================= *)
+(* SECTION 10. IDENTIFIERS AND REFERENCES                                     *)
+(* ========================================================================= *)
+
+(*
+   Reference is use-side dotted path, used in ${ref} and @ref.
+   Identifier is definition-side name, used in tag, variable, and alias.
+*)
+
+reference  = identifier , { "." , identifier } ;
 identifier = letter , { letter | digit | "-" } ;
 
 (* ========================================================================= *)
-(* SECTION 9: CHARACTER SET                                                   *)
+(* SECTION 11. BASIC CHARACTER CLASSES                                        *)
 (* ========================================================================= *)
 
-character = letter | digit | symbol | " " ;
+letter = "A" - "Z" | "a" - "z" ;
+digit  = "0" - "9" ;
 
-newline_char = "\n" | "\r" ;
+plain_text   = { ? regex:[^\r\n] ? } ;
 
-letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M"
-       | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
-       | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
-       | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
-
-digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
-
-symbol = "!" | '"' | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | ","
-       | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "["
-       | "\\" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~" ;
-
-(* ========================================================================= *)
-(* SECTION 10: CONSTRAINTS AND RULES                                          *)
-(* ========================================================================= *)
-
-(* RULE 1: Every non‑empty line starts with ':' or '-' or '>' after whitespace removal. *)
-(* RULE 2: Step syntax: - [(tag)] [@tag] [!/?] text *)
-(* RULE 3: If @tag present, ! or ? must follow immediately. *)
-(* RULE 4: ! means shell command, ? means boolean question. *)
-(* RULE 5: No special prefix means plain agent message. *)
-(* RULE 6: Text is never quoted; it runs to end of line. *)
-(* RULE 7: String values in variable definitions must be double‑quoted. *)
-(* RULE 8: ! text in steps and ${ref ! text} share the same text definition. *)
-(* RULE 9: ? constrains agent to reply true/false. *)
-(* RULE 10: > imports another .workflow.list file; path may be local or URL.  *)
-
-(* ========================================================================= *)
-(* SECTION 11: EXAMPLES                                                       *)
-(* ========================================================================= *)
-
-(* EXAMPLE 1: Variable definition
-   :retries = 0
-   :greeting = "hello"
+(*
+   Symbol is any printable ASCII character except letter, digit, and newline.
+   Space is allowed.
 *)
 
-(* EXAMPLE 2: Plain step (agent message)
+symbol = ? printable ASCII character except letter, digit, newline ? ;
+
+(* ========================================================================= *)
+(* SECTION 12. CONSTRAINTS AND RULES                                          *)
+(* ========================================================================= *)
+
+(*
+   - RULE 1.  Every non-empty line starts with : or - or > after whitespace removal.
+   - RULE 2.  Step syntax is - [(tag)] [@ref] [!/?] text.
+   - RULE 3.  If @ref present, ! or ? must follow immediately.
+   - RULE 4.  ! means shell command, ? means boolean question.
+   - RULE 5.  No special prefix means plain agent message.
+   - RULE 6.  Text is never quoted. It runs to end of line.
+   - RULE 7.  Variable values are text. No quoting or type distinction is required.
+   - RULE 8.  ! text in steps and ${ref ! text} share the same text definition.
+   - RULE 9.  ? constrains agent to reply true or false.
+   - RULE 10. > (alias) path imports a .workflow.list file under a namespace.
+   - RULE 11. Nesting uses 2 spaces per level. Only steps and comments may indent.
+   - RULE 12. Variables and imports are always top-level, no indentation.
+   - RULE 13. identifier is for definition, tag, variable, alias.
+   - RULE 14. reference is for use, ${ref}, @ref. It supports dot-path access.
+*)
+
+(* ========================================================================= *)
+(* SECTION 13. EXAMPLES                                                       *)
+(* ========================================================================= *)
+
+(* EXAMPLE 1. Variable definition
+   :retries = 0
+   :greeting = hello
+*)
+
+(* EXAMPLE 2. Plain step (agent message)
    - Read project structure
 *)
 
-(* EXAMPLE 3: Step with tag
+(* EXAMPLE 3. Step with tag
    - (analyze) Analyze source code
 *)
 
-(* EXAMPLE 4: Step with shell command
+(* EXAMPLE 4. Step with shell command
    - ! ls -al
-   - ! rg "pattern" src/
 *)
 
-(* EXAMPLE 5: Step with boolean question
+(* EXAMPLE 5. Step with boolean question
    - ? Data backed up, continue?
 *)
 
-(* EXAMPLE 6: Step with jump target and question
+(* EXAMPLE 6. Step with jump target and question
    - (check) @retry ? Errors fixed?
 *)
 
-(* EXAMPLE 7: Step with jump target and command
+(* EXAMPLE 7. Step with jump target and command
    - @init ! python setup.py
 *)
 
-(* EXAMPLE 8: Variable with substitution
+(* EXAMPLE 8. Variable with substitution
    :result = ${analyze ! grep "error"}
    :count = ${retries}
 *)
 
-(* EXAMPLE 9: Import line
-   > ./common/setup.workflow.list
-   > https://example.com/workflows/shared.workflow.list
+(* EXAMPLE 9. Import with alias
+   > (utils) ./lib/utils.workflow.list
+   > (remote) https://example.com/wf/shared.workflow.list
 *)
 
-(* EXAMPLE 10: Full workflow
+(* EXAMPLE 10. Nested steps with inline substitution
+   - (diff) ! git diff --cached
+   - (gen) Generate commit message for. ${diff}
+   - @gen ? Accept this message?
+   - ! git commit -m "${gen}"
+*)
+
+(* EXAMPLE 11. Full workflow with import and dot notation
    :attempt = 0
-   - (start) Begin processing
-   - ! ls ./data
-   > ./validate.workflow.list
-   - (validate) Check data integrity
-   - @validate ? Data valid?
-   - (fix) @retry ! sed -i 's/bug/fix/g' ./data
-   - (retry) Attempt fix
-   :attempt = ${attempt} + 1
-   - @retry ! python validate.py
-   - ? Retry again?
+   > (tasks) ./common/tasks.workflow.list
+   - (init) Initialize environment
+      - ! python setup.py
+   - (run) Run main process
+      - ? Ready to proceed?
+      - @tasks.run ! execute.sh
+   - @init ? Setup correct?
 *)
 
 (* ========================================================================= *)
