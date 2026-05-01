@@ -1,6 +1,6 @@
-# packages/waf-runtime/pyproject.toml
+# packages/waf-cli/pyproject.toml
 [project]
-name = "waf-runtime"
+name = "waf-cli"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,12 +9,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic-ai>=1.89.0",
+    "typer>=0.25.1",
     "waf-core",
+    "waf-runtime",
 ]
 
 [project.scripts]
-waf-runtime = "waf_runtime:main"
+waf-cli = "waf_cli:main"
 
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
@@ -22,3 +23,4 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 waf-core = { workspace = true }
+waf-runtime = { workspace = true }
