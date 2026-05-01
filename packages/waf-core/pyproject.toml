@@ -8,7 +8,9 @@ authors = [
     { name = "D7x7z49", email = "85430783+D7x7z49@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.13.3",
+]
 
 [project.scripts]
 waf-core = "waf_core:main"

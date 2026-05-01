@@ -71,7 +71,7 @@ comment_line = "#" , plain_text ;
 
 import_line = ">" , "(" , identifier , ")" , path ;
 
-path = text ;
+path = plain_text ;
 
 (* ========================================================================= *)
 (* SECTION 6. VARIABLE LINE                                                   *)
