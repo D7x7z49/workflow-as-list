@@ -18,9 +18,9 @@ from waf_core.util import parse_line
 class WorkflowImportStore(Protocol):
     """runtime should be able to store and retrieve workflows"""
 
-    def set(self, key: SHA256Hash, value: WorkflowContent): ...
-
     def get(self, key: SHA256Hash) -> Optional[WorkflowContent]: ...
+
+    def set(self, key: SHA256Hash, value: WorkflowContent): ...
 
 
 class WorkflowCallback(Protocol):
@@ -33,18 +33,23 @@ class WorkflowCallback(Protocol):
 
 class WorkflowHub:
     def __init__(self, path: ImportPath, store: WorkflowImportStore, callback: WorkflowCallback):
+        self.imports: dict[ImportPath, SHA256Hash] = {}
         self.store: WorkflowImportStore = store
         self.callback: WorkflowCallback = callback
 
         namespace = self.load_import(path)
         self.root: SHA256Hash = namespace
-        self.imports: dict[ImportPath, SHA256Hash] = {path: self.root}
+        self.imports[path] = namespace
 
     def get_context(self, namespace: SHA256Hash) -> WorkflowContent:
         content = self.store.get(namespace)
         if content is None:
             raise ValueError("Namespace not found")
         return content
+
+    @property
+    def root_context(self) -> WorkflowContent:
+        return self.get_context(self.root)
 
     def load_import(self, path: ImportPath):
         iterator = self.callback.load_workflow(path)

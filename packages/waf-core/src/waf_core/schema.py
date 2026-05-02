@@ -12,6 +12,7 @@ Identifier = Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9-]*$"
 Reference = Annotated[str, StringConstraints(pattern=r"^[A-Za-z][A-Za-z0-9-]*(?:\.[A-Za-z][A-Za-z0-9-]*)*$")]
 
 SHA256Hash = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$", min_length=64, max_length=64)]
+SHA256HashAdapter = TypeAdapter(SHA256Hash)
 
 # Type aliases
 ImportPath = Union[FilePath, Annotated[AnyUrl, UrlConstraints(allowed_schemes=["http", "https", "file"])]]
@@ -37,7 +38,7 @@ class ImportLine(BaseLine):
 
 
 class VariableLine(BaseLine):
-    name: Union[Identifier, Reference]
+    name: Identifier
     text: str
 
 

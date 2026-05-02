@@ -88,13 +88,21 @@ def parse_line(context: WorkflowContent, line: str, lineno: NonNegativeInt) -> L
 
 def add_context_line(context: WorkflowContent, line: LineItem):
     context.line_map[line.lineno] = line
+
     match line:
         case ImportLine():
+            if line.alias in context.label_map:
+                raise ValueError(f"Duplicate import alias '{line.alias}' at line {context.path}:{line.lineno}")
             context.label_map[line.alias] = line
+
         case VariableLine():
             context.label_map[line.name] = line
+
         case StepLine() if line.tag is not None:
+            if line.tag in context.label_map:
+                raise ValueError(f"Duplicate step tag '{line.tag}' at line {context.path}:{line.lineno}")
             context.label_map[line.tag] = line
+
         case _:
             pass
 
@@ -231,3 +239,33 @@ SUBSTITUTION_RE = re.compile(SUBSTITUTION_PATTERN)
 
 def get_text_ref_hash(text: str) -> set[SHA256Hash]:
     return set(SUBSTITUTION_RE.findall(text))
+
+
+def build_block_from_step(context: WorkflowContent, step: StepLine) -> list[StepLine]:
+    block: list[StepLine] = [step]
+    start_lineno = step.lineno
+    start_depth = step.depth
+
+    for lineno in sorted(context.line_map.keys()):
+        if lineno <= start_lineno:
+            continue
+        line = context.line_map[lineno]
+        if not isinstance(line, StepLine):
+            continue
+        if line.depth > start_depth:
+            block.append(line)
+        else:
+            break
+    return block
+
+
+def build_root_block(context: WorkflowContent) -> list[StepLine]:
+    root_steps = [
+        line
+        for lineno in sorted(context.line_map.keys())
+        if isinstance(line := context.line_map[lineno], StepLine) and line.depth == 0
+    ]
+    full_block: list[StepLine] = []
+    for step in root_steps:
+        full_block.extend(build_block_from_step(context, step))
+    return full_block
