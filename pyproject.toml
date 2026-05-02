@@ -22,6 +22,5 @@ members = ["packages/*"]
 [tool.pytest]
 asyncio_mode = "auto"
 addopts = ["--import-mode=importlib"]
-pythonpath = ["src"]
 testpaths = ["test"]
 python_files = ["*.unit.test.py", "*.component.test.py", "*.integration.test.py", "*.e2e.test.py"]

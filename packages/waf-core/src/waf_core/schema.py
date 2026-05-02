@@ -64,7 +64,7 @@ class ReferenceNode(BaseModel):
         return hashlib.sha256(content.encode()).hexdigest()
 
 
-class WorkflowContent(BaseModel):
+class WorkflowModule(BaseModel):
     path: ImportPath
     namespace: SHA256Hash
     line_map: dict[NonNegativeInt, LineItem] = Field(default_factory=dict)

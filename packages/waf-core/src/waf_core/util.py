@@ -3,6 +3,7 @@
 import re
 
 from pydantic import NonNegativeInt
+
 from waf_core.constants import (
     INDENT_UNIT,
     PREFIX_COMMENT,
@@ -30,11 +31,11 @@ from waf_core.schema import (
     SHA256Hash,
     StepLine,
     VariableLine,
-    WorkflowContent,
+    WorkflowModule,
 )
 
 
-def parse_line(context: WorkflowContent, line: str, lineno: NonNegativeInt) -> LineItem:
+def parse_line(context: WorkflowModule, line: str, lineno: NonNegativeInt) -> LineItem:
     stripped = line.rstrip()
 
     if not stripped:
@@ -86,7 +87,7 @@ def parse_line(context: WorkflowContent, line: str, lineno: NonNegativeInt) -> L
             )
 
 
-def add_context_line(context: WorkflowContent, line: LineItem):
+def add_context_line(context: WorkflowModule, line: LineItem):
     context.line_map[line.lineno] = line
 
     match line:
@@ -119,7 +120,7 @@ def parse_import(line: str, lineno: NonNegativeInt) -> ImportLine:
     if close_paren == -1:
         raise ValueError(f"at {lineno} import line must end with '{TAG_CLOSE}'")
 
-    alias = line[:close_paren].strip()
+    alias = line[1:close_paren].strip()
     text = line[close_paren + 1 :].strip()
     path = ImportPathAdapter.validate_python(text)
 
@@ -191,7 +192,7 @@ def parse_step(line: str, lineno: NonNegativeInt, depth: NonNegativeInt) -> Step
     return StepLine(lineno=lineno, depth=depth, mode=mode, tag=tag, jump=jump, text=text)
 
 
-def parse_substitution(context: WorkflowContent, text: str, lineno: NonNegativeInt):
+def parse_substitution(context: WorkflowModule, text: str, lineno: NonNegativeInt):
     cleaned_text = text
     offset = 0
 
@@ -241,7 +242,7 @@ def get_text_ref_hash(text: str) -> set[SHA256Hash]:
     return set(SUBSTITUTION_RE.findall(text))
 
 
-def build_block_from_step(context: WorkflowContent, step: StepLine) -> list[StepLine]:
+def build_block_from_step(context: WorkflowModule, step: StepLine) -> list[StepLine]:
     block: list[StepLine] = [step]
     start_lineno = step.lineno
     start_depth = step.depth
@@ -259,7 +260,7 @@ def build_block_from_step(context: WorkflowContent, step: StepLine) -> list[Step
     return block
 
 
-def build_root_block(context: WorkflowContent) -> list[StepLine]:
+def build_root_block(context: WorkflowModule) -> list[StepLine]:
     root_steps = [
         line
         for lineno in sorted(context.line_map.keys())
