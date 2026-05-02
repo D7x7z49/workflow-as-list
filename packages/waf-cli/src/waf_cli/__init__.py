@@ -1,3 +1,7 @@
 # packages/waf-cli/src/waf_cli/__init__.py
+
+from waf_cli.hub import exec_cli
+
+
 def main() -> None:
-    print("Hello from waf-cli!")
+    exec_cli()
