@@ -164,6 +164,8 @@ def get_line_value(
 ) -> str:
     if isinstance(line, VariableLine):
         raw_value = env.variable_map.get(line.name, line.text)
+        if raw_value is None:
+            raise ValueError(f"Variable '{name_hint}' not found in module {env.context.path}")
         return resolve_text(env, raw_value, executor=executor, resolving=resolving)
     elif isinstance(line, StepLine):
         if line.tag and line.tag in env.step_output_map:

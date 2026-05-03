@@ -1,7 +1,7 @@
 # packages/waf-runtime/src/waf_runtime/hub.py
 
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Generator
 
 from pydantic import AnyUrl
 
@@ -19,7 +19,7 @@ from waf_core.util import build_block_from_step, build_root_block
 
 from waf_runtime.config.schema import RuntimeConfig
 from waf_runtime.constants import REMOTE_WORKFLOW_CACHE_ROOT
-from waf_runtime.schema import Environment, Frame
+from waf_runtime.schema import Environment, Frame, StepRecord
 from waf_runtime.util import (
     CircularImportError,
     compute_file_hash,
@@ -110,6 +110,10 @@ class WorkflowRuntime:
     #  Execution
     # ------------------------------------------------------------------
     def run(self) -> None:
+        for _ in self.iter_steps():
+            pass
+
+    def iter_steps(self) -> Generator[StepRecord, None, None]:
         root_block = build_root_block(self.root_module)
         if not root_block:
             return
@@ -146,6 +150,13 @@ class WorkflowRuntime:
 
             if step.tag:
                 frame.environment.step_output_map[step.tag] = result_text
+
+            yield StepRecord(
+                step=step,
+                resolved_text=resolved_text,
+                result_text=result_text,
+                success=success,
+            )
 
             if step.jump is not None and success:
                 try:
