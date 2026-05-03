@@ -1,16 +1,26 @@
 # packages/waf-cli/src/waf_cli/hub.py
-
 import typer
+
+from waf_runtime.config.hub import load_config
+
+from waf_cli.schema import CommandContext
+from waf_cli.command.config import sub_config_option
+from waf_cli.command.agent import sub_agent_option
+from waf_cli.command.run import sub_run_option
 
 app = typer.Typer(rich_markup_mode=None, pretty_exceptions_enable=False)
 
+# Register sub-commands
+app.add_typer(sub_config_option, name="config")
+app.add_typer(sub_agent_option, name="agent")
+app.add_typer(sub_run_option, name="run")
+
 
 @app.callback()
-def main_handler(ctx: typer.Context): ...
+def main_handler(ctx: typer.Context):
+    config = load_config()
+    ctx.obj = CommandContext(config=config)
 
 
 def exec_cli():
-    # set sub-commands
-    # app.add_typer(xxx, name="xxx")
-
     app()
