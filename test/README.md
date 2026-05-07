@@ -1,3 +1,4 @@
+<!-- test/README.md -->
 # Common sense for test engineering
 
 Write tests that verify necessary conditions only. No test suite covers infinite input space. Focus on high-importance inputs and consolidate logic you trust. Use monitoring and fast rollback for untested areas.
