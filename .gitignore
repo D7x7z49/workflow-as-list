@@ -136,8 +136,6 @@ config/local*
 *.sqlite3
 
 # Cache directories
-*.waf
-*.workflow.list
 .cache/
 *.cache
 .agents/

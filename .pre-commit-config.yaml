@@ -14,9 +14,8 @@ repos:
         name: Fix file headers
         entry: scripts/fix_headers.py
         language: python
-        files: '\.(py|sh|bash|zsh|fish|ps1|pl|rb|php|yaml|yml|toml|ini|cfg|conf|env|json5|hcl|tf|sql|lua)$'
-        types: [file]
-        args: [--quiet]
+        pass_filenames: true
+        files: '^(example|scripts|test|packages)/'
 
   # --- basic hygiene ---
   - repo: https://github.com/pre-commit/pre-commit-hooks
