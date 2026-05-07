@@ -16,6 +16,7 @@ repos:
         language: python
         pass_filenames: true
         files: '^(example|scripts|test|packages)/'
+        args: [--quiet]
 
   # --- basic hygiene ---
   - repo: https://github.com/pre-commit/pre-commit-hooks
