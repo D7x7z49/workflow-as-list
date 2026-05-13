@@ -1,0 +1,5 @@
+# example/git/commit/gen-git-commit-message.wal
+# Demo: Generate Conventional Commits message from staged diff.
+
+- (context) ! python scripts/utils/commit_context.py
+- (gen) ${context} Write a single Conventional Commits commit message for this diff, no explanation.

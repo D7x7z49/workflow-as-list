@@ -1,0 +1,24 @@
+# packages/wal-runtime/pyproject.toml
+[project]
+name = "wal-runtime"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "D7x7z49", email = "85430783+D7x7z49@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic-ai>=1.94.0",
+    "wal-core",
+]
+
+[project.scripts]
+wal-runtime = "wal_runtime:main"
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+wal-core = { workspace = true }

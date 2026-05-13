@@ -139,7 +139,7 @@ config/local*
 .cache/
 *.cache
 .agents/
-.waf/
+.wal/
 
 # Tool‑specific
 .specify/

@@ -1,0 +1,26 @@
+# packages/wal-cli/pyproject.toml
+[project]
+name = "wal-cli"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "D7x7z49", email = "85430783+D7x7z49@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.25.1",
+    "wal-core",
+    "wal-runtime",
+]
+
+[project.scripts]
+wal-cli = "wal_cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+wal-core = { workspace = true }
+wal-runtime = { workspace = true }

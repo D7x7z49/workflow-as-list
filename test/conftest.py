@@ -3,9 +3,9 @@ import pytest
 import hashlib
 from typing import Optional, Tuple
 
-from waf_core.schema import WorkflowModule, ImportPathAdapter
-from waf_runtime.config.schema import RuntimeConfig, WhiteList
-from waf_runtime.util import WorkflowExecutor
+from wal_core.schema import WorkflowModule, ImportPathAdapter
+from wal_runtime.config.schema import RuntimeConfig, WhiteList
+from wal_runtime.util import WorkflowExecutor
 
 
 class FakeWorkflowExecutor(WorkflowExecutor):

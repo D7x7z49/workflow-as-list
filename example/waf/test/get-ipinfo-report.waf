@@ -1,5 +1,0 @@
-# example/waf/test/get-ipinfo-report.waf
-
-- (ip) ! curl -s https://ipinfo.io/json
-- (summary) From this JSON: ${ ip ! jq -c '.' }, tell my IP, location, and ISP.
-- ! echo ${summary ! base64 -w 0} | base64 -d > response.cache

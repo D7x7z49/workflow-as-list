@@ -40,7 +40,7 @@ COMMENT_STYLES: list[tuple[str, list[str]]] = [
         "hcl", "tf", "tfvars",                 # HashiCorp / Terraform
         "r", "rprofile",                       # R
         "makefile", "dockerfile",              # Special filenames as suffix
-        "properties", "editorconfig", "gitignore", "gitattributes", "waf"
+        "properties", "editorconfig", "gitignore", "gitattributes", "wal"
     ]),
     ("// {rel}", [
         "c", "h", "cpp", "cxx", "cc", "hpp", "hxx", "hh", # C / C++
