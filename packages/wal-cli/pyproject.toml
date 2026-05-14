@@ -1,6 +1,6 @@
 # packages/wal-cli/pyproject.toml
 [project]
-name = "wal-cli"
+name = "d49-wal-cli"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -10,8 +10,8 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "typer>=0.25.1",
-    "wal-core",
-    "wal-runtime",
+    "d49-wal-core",
+    "d49-wal-runtime",
 ]
 
 [project.scripts]
@@ -22,5 +22,9 @@ requires = ["uv_build>=0.10.11,<0.11.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-wal-core = { workspace = true }
-wal-runtime = { workspace = true }
+d49-wal-core = { workspace = true }
+d49-wal-runtime = { workspace = true }
+
+[tool.uv.build-backend]
+module-name = "wal_cli"
+module-root = "src"

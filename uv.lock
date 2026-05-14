@@ -4,9 +4,9 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "wal-cli",
-    "wal-core",
-    "wal-runtime",
+    "d49-wal-cli",
+    "d49-wal-core",
+    "d49-wal-runtime",
     "workflow-as-list",
 ]
 
@@ -627,6 +627,49 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e4/f7/3ee212c1bc314551094fc8fda7b4b63c647ac5c32d06daa285d04d33edfc/cyclopts-4.11.2.tar.gz", hash = "sha256:8c9b77921660fa1ee52c150e2217ced672323efb3434e9b338077de1bc551ff4", size = 175935, upload-time = "2026-05-04T00:11:57.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/23/18/4cedda786e7da429e7489549a9e5461530d4133130e541f25fb94f015776/cyclopts-4.11.2-py3-none-any.whl", hash = "sha256:838020120b939549ff7c8423aca29c86764b5dd1d8a5d7f3753a6327861f537b", size = 213537, upload-time = "2026-05-04T00:11:56.103Z" },
+]
+
+[[package]]
+name = "d49-wal-cli"
+version = "0.1.0"
+source = { editable = "packages/wal-cli" }
+dependencies = [
+    { name = "d49-wal-core" },
+    { name = "d49-wal-runtime" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "d49-wal-core", editable = "packages/wal-core" },
+    { name = "d49-wal-runtime", editable = "packages/wal-runtime" },
+    { name = "typer", specifier = ">=0.25.1" },
+]
+
+[[package]]
+name = "d49-wal-core"
+version = "0.1.0"
+source = { editable = "packages/wal-core" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.13.3" }]
+
+[[package]]
+name = "d49-wal-runtime"
+version = "0.1.0"
+source = { editable = "packages/wal-runtime" }
+dependencies = [
+    { name = "d49-wal-core" },
+    { name = "pydantic-ai" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "d49-wal-core", editable = "packages/wal-core" },
+    { name = "pydantic-ai", specifier = ">=1.94.0" },
 ]
 
 [[package]]
@@ -2913,49 +2956,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ec/0d/915c02c94d207b85580eb09bffab54438a709e7288524094fe781da526c2/virtualenv-21.3.1.tar.gz", hash = "sha256:c2305bc1fddeec40699b8370d13f8d431b0701f00ce895061ce493aeded4426b", size = 7613791, upload-time = "2026-05-05T01:34:31.402Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b1/4f/f71e641e504111a5a74e3a20bc52d01bd86788b22699dd3fee1c63253cf6/virtualenv-21.3.1-py3-none-any.whl", hash = "sha256:d1a71cf58f2f9228fff23a1f6ec15d39785c6b32e03658d104974247145edd35", size = 7594539, upload-time = "2026-05-05T01:34:28.98Z" },
-]
-
-[[package]]
-name = "wal-cli"
-version = "0.1.0"
-source = { editable = "packages/wal-cli" }
-dependencies = [
-    { name = "typer" },
-    { name = "wal-core" },
-    { name = "wal-runtime" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "typer", specifier = ">=0.25.1" },
-    { name = "wal-core", editable = "packages/wal-core" },
-    { name = "wal-runtime", editable = "packages/wal-runtime" },
-]
-
-[[package]]
-name = "wal-core"
-version = "0.1.0"
-source = { editable = "packages/wal-core" }
-dependencies = [
-    { name = "pydantic" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.13.3" }]
-
-[[package]]
-name = "wal-runtime"
-version = "0.1.0"
-source = { editable = "packages/wal-runtime" }
-dependencies = [
-    { name = "pydantic-ai" },
-    { name = "wal-core" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic-ai", specifier = ">=1.94.0" },
-    { name = "wal-core", editable = "packages/wal-core" },
 ]
 
 [[package]]

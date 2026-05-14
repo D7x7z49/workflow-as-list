@@ -1,0 +1,13 @@
+# .auto-version.config.toml
+projects = [
+    "packages/wal-core",
+    "packages/wal-runtime",
+    "packages/wal-cli",
+]
+
+major = ["feat"]
+minor = ["feat"]
+patch = ["fix", "perf", "refactor"]
+
+[fix-deps]
+repo-url = "https://github.com/D7x7z49/workflow-as-list.git"

@@ -1,6 +1,6 @@
 # packages/wal-core/pyproject.toml
 [project]
-name = "wal-core"
+name = "d49-wal-core"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -18,3 +18,7 @@ wal-core = "wal_core:main"
 [build-system]
 requires = ["uv_build>=0.10.11,<0.11.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "wal_core"
+module-root = "src"
