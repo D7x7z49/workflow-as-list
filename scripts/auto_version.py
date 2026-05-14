@@ -22,7 +22,7 @@ RE_SEMVER = re.compile(
     r"^(?P<major>0|[1-9]\d*)\."
     r"(?P<minor>0|[1-9]\d*)\."
     r"(?P<patch>0|[1-9]\d*)"
-    r"(?P<pre>[a-zA-Z]+\d*)?$"
+    r"(?P<pre>[a-zA-Z]+\w*)?$"
 )
 
 OUTPUT_TEXT = []
@@ -34,6 +34,7 @@ class Config:
     major: list[str] = field(default_factory=list)
     minor: list[str] = field(default_factory=list)
     patch: list[str] = field(default_factory=list)
+    release_branch: str = field(default="main")
 
     # fix deps table
     fix_deps_repo_url: str | None = field(default=None)
@@ -62,6 +63,13 @@ class Config:
                 exit(f"[!] 'fix-deps.repo-url' must be a string in {CONFIG_FILE}")
             data.fix_deps_repo_url = repo_url
 
+        optional = ["release_branch"]
+        for key in optional:
+            if key in raw:
+                if not isinstance(raw[key], str):
+                    exit(f"[!] '{key}' must be a string in {CONFIG_FILE}")
+                setattr(data, key, raw[key])
+
         return data
 
 
@@ -71,6 +79,16 @@ class ReleaseInfo:
     path: Path
     new_version: str | None
     old_version: str | None
+
+
+def ensure_clean_workspace(config: Config) -> None:
+    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+    if result.stdout.strip():
+        exit("[!] working directory is not clean, please commit or stash changes first")
+
+    result = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True)
+    if result.stdout.strip() != config.release_branch:
+        exit(f"[!] not on release branch <{config.release_branch}>, current branch is <{result.stdout.strip()}>")
 
 
 def get_package_name(proj_path: Path) -> str:
@@ -159,40 +177,54 @@ def classify_commit(subject: str, config: Config) -> str | None:
     return None
 
 
-def compute_bump(version: str, tag: str, path: Path, config: Config) -> str | None:
+def compute_bump(config: Config, path: str | Path, tag: str, version: str, stage: str) -> str:
     major, minor, patch, pre = parse_version(version)
     commits = get_commits_since(tag)
     if not commits:
-        return None
+        return version
 
-    bumped = False
+    is_changed = False
     for hash, subject in commits:
         if not is_package_commit(hash, path):
             continue
         bump = classify_commit(subject, config)
         if not bump:
             continue
-        bumped = True
+
         OUTPUT_TEXT.append(f"[+] <{hash}> <{bump}>")
-        if bump == "major":
-            major += 1
-            minor = 0
-            patch = 0
-            pre = None
-        elif bump == "minor":
-            minor += 1
-            patch = 0
-            pre = None
-        elif bump == "patch":
-            patch += 1
-            pre = None
+        is_changed = True
+        match(bump):
+            case "major":
+                major, minor, patch = major + 1, 0, 0
+            case "minor":
+                minor, patch = minor + 1, 0
+            case "patch":
+                patch = patch + 1
 
-    if not bumped:
-        return None
+    if not is_changed:
+        return version
 
-    new_version = f"{major}.{minor}.{patch}"
+    num = None
+    if pre and stage in ("alpha", "beta", "rc"):
+        if pre.startswith("alpha"):
+            num = int(pre[5:])
+        if pre.startswith("beta"):
+            num = int(pre[4:])
+        if pre.startswith("rc"):
+            num = int(pre[2:])
+
+    match (stage):
+        case "stable":
+            pre = None
+        case "dev":
+            pre = f"dev{commits[-1][0]}"
+        case "alpha" | "beta" | "rc":
+            pre = f"{stage}1" if pre is None or num is None else f"{stage}{num + 1}"
+
     if pre:
-        new_version += pre
+        new_version = f"{major}.{minor}.{patch}{pre}"
+    else:
+        new_version = f"{major}.{minor}.{patch}"
     return new_version
 
 
@@ -306,18 +338,20 @@ def main():
         exit(f"[!] missing <{CONFIG_FILE}>")
 
     parser = argparse.ArgumentParser(description="Auto version bump based on Conventional Commits")
+    parser.add_argument(
+        "--stage",
+        choices=["stable", "alpha", "beta", "rc", "dev"],
+        default="stable",
+        help="Release stage (default: stable)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done, no changes")
     parser.add_argument("--quiet", action="store_true", help="Suppress informational output")
     args = parser.parse_args()
 
-    if (
-        not args.dry_run
-        and subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout.strip()
-    ):
-        exit("[!] working directory is not clean, please commit or stash changes first")
-
     OUTPUT_TEXT.append(f"[-] load config from <{CONFIG_FILE}>")
     config = Config.from_path(CONFIG_PATH)
+    if not args.dry_run:
+        ensure_clean_workspace(config)
 
     OUTPUT_TEXT.append("[-] get package name")
     projects: list[tuple[str, Path]] = [(get_package_name(Path(proj)), Path(proj)) for proj in config.projects]
@@ -333,8 +367,8 @@ def main():
         if tag and version:
             OUTPUT_TEXT.append(f"[+] <{name}> at {tag}")
             changed[-1].old_version = version
-            new_version = compute_bump(version, tag, path, config)
-            if new_version:
+            new_version = compute_bump(config, path, tag, version, args.stage)
+            if changed[-1].old_version != new_version:
                 OUTPUT_TEXT.append(f"[+] <{name}> bump to {new_version}")
                 changed[-1].new_version = new_version
             else:
