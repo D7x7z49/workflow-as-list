@@ -1,0 +1,55 @@
+name: publish pypi
+
+on:
+  push:
+    tags:
+      - '*-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: ${{ contains(github.ref_name, 'd49-wal-core') || contains(github.ref_name, 'd49-wal-runtime') || contains(github.ref_name, 'd49-wal-cli') }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    environment:
+      name: ${{ contains(github.ref_name, 'd49-wal-core') && 'wal-core' || contains(github.ref_name, 'd49-wal-runtime') && 'wal-runtime' || contains(github.ref_name, 'd49-wal-cli') && 'wal-cli' || 'unknown' }}
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+
+      - name: extract tag info
+        id: tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          PACKAGE="${TAG%-v*}"
+          VERSION="${TAG##*-v}"
+          bash scripts/actions/check-tag.sh "$PACKAGE" "$VERSION"
+          echo "package=${PACKAGE}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: pyproject.toml
+
+      - name: setup uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: build package
+        run: uv build --package ${{ steps.tag.outputs.package }}
+
+      - name: create github release
+        run: gh release create "${{ github.ref_name }}" dist/* --generate-notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: publish to pypi
+        run: uv publish dist/*
