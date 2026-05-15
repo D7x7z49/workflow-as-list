@@ -392,6 +392,8 @@ def main():
             update_pyproject_file(info, args.dry_run, deps_map)
         else:
             update_pyproject_file(info, args.dry_run)
+    if not args.dry_run:
+        subprocess.run(["uv", "lock"], check=True)
 
     OUTPUT_TEXT.append("[-] commit changes and tags")
     release_changes(changed, args.dry_run)

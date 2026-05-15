@@ -631,7 +631,7 @@ wheels = [
 
 [[package]]
 name = "d49-wal-cli"
-version = "0.1.1"
+version = "0.1.1rc1"
 source = { editable = "packages/wal-cli" }
 dependencies = [
     { name = "d49-wal-core" },
@@ -648,7 +648,7 @@ requires-dist = [
 
 [[package]]
 name = "d49-wal-core"
-version = "0.1.1"
+version = "0.1.1rc1"
 source = { editable = "packages/wal-core" }
 dependencies = [
     { name = "pydantic" },
@@ -659,7 +659,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.13.3" }]
 
 [[package]]
 name = "d49-wal-runtime"
-version = "0.1.1"
+version = "0.1.1rc1"
 source = { editable = "packages/wal-runtime" }
 dependencies = [
     { name = "d49-wal-core" },
