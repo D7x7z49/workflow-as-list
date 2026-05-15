@@ -9,5 +9,5 @@ major = ["feat"]
 minor = ["feat"]
 patch = ["fix", "perf", "refactor"]
 
-[fix-deps]
-repo-url = "https://github.com/D7x7z49/workflow-as-list.git"
+# [fix-deps] # if only release github, don't need pypi
+# repo-url = "https://github.com/D7x7z49/workflow-as-list.git"

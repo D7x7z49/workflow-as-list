@@ -32,24 +32,34 @@ jobs:
           bash scripts/actions/check-tag.sh "$PACKAGE" "$VERSION"
           echo "package=${PACKAGE}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "exists=ok" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=no" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: setup python
+        if: ${{ steps.tag.outputs.exists == 'no' }}
         uses: actions/setup-python@v6
         with:
           python-version-file: pyproject.toml
 
       - name: setup uv
+        if: ${{ steps.tag.outputs.exists == 'no' }}
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
 
       - name: build package
+        if: ${{ steps.tag.outputs.exists == 'no' }}
         run: uv build --package ${{ steps.tag.outputs.package }}
 
       - name: create github release
+        if: ${{ steps.tag.outputs.exists == 'no' }}
         run: gh release create "${{ github.ref_name }}" dist/* --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: publish to pypi
+        if: ${{ steps.tag.outputs.exists == 'no' }}
         run: uv publish dist/*

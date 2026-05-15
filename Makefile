@@ -8,10 +8,17 @@ test:
 	uv run python -m pytest
 
 release-try-run:
-	uv run python scripts/auto_version.py --dry-run
-release-test:
-	git tag -l 'd49-*' | xargs git tag -d
-	uv run python scripts/auto_version.py
+	uv run python scripts/auto_version.py --dry-run --stage dev
+	uv run python scripts/auto_version.py --dry-run --stage alpha
+	uv run python scripts/auto_version.py --dry-run --stage beta
+	uv run python scripts/auto_version.py --dry-run --stage rc
+	uv run python scripts/auto_version.py --dry-run --stage stable
+release-alpha:
+	uv run python scripts/auto_version.py --stage alpha
+release-beta:
+	uv run python scripts/auto_version.py --stage beta
+release-rc:
+	uv run python scripts/auto_version.py --stage rc
 release:
 	uv run python scripts/auto_version.py
 

@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 
 CONFIG_FILE = ".auto-version.config.toml"
 CONFIG_PATH = Path.cwd() / CONFIG_FILE
+CHANGELOG_PATH = Path.cwd() / "CHANGELOG.md"
 DEFAULT_VERSION = "0.1.0"
 
 RE_CONVENTIONAL = re.compile(
@@ -193,7 +194,7 @@ def compute_bump(config: Config, path: str | Path, tag: str, version: str, stage
 
         OUTPUT_TEXT.append(f"[+] <{hash}> <{bump}>")
         is_changed = True
-        match(bump):
+        match bump:
             case "major":
                 major, minor, patch = major + 1, 0, 0
             case "minor":
@@ -213,7 +214,7 @@ def compute_bump(config: Config, path: str | Path, tag: str, version: str, stage
         if pre.startswith("rc"):
             num = int(pre[2:])
 
-    match (stage):
+    match stage:
         case "stable":
             pre = None
         case "dev":
@@ -342,7 +343,7 @@ def main():
         "--stage",
         choices=["stable", "alpha", "beta", "rc", "dev"],
         default="stable",
-        help="Release stage (default: stable)"
+        help="Release stage (default: stable)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done, no changes")
     parser.add_argument("--quiet", action="store_true", help="Suppress informational output")
@@ -376,6 +377,8 @@ def main():
         else:
             OUTPUT_TEXT.append(f"[?] <{name}> no tag, set <{DEFAULT_VERSION}> (first release)")
             changed[-1].new_version = DEFAULT_VERSION
+            if not args.dry_run:
+                CHANGELOG_PATH.touch(exist_ok=True)
 
     OUTPUT_TEXT.append("[-] update version")
     if config.fix_deps_repo_url:
