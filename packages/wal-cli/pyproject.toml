@@ -1,7 +1,7 @@
 # packages/wal-cli/pyproject.toml
 [project]
 name = "d49-wal-cli"
-version = "0.1.1"
+version = "0.1.1rc1"
 description = "Add your description here"
 readme = "README.md"
 authors = [
