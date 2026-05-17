@@ -3,10 +3,11 @@
 # Usage: python commit_context.py [--src-key dir1 ...] [--test-key dir1 ...] [--exclude-key pattern ...]
 
 import argparse
-import sys
 import subprocess
+from pathlib import Path
 
-SPEC_URL = "https://raw.githubusercontent.com/conventional-commits/conventionalcommits.org/refs/heads/master/content/v1.0.0/index.md"
+ROOT = Path.cwd()
+SPEC_PATH = ROOT / "prompt/git/commit/conventional-commits.md"
 
 # Full set of Conventional Commits community types
 ALL_TYPES = {"feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"}
@@ -25,7 +26,7 @@ CONTENT_DIFF = "git --no-pager diff --staged"
 def run(cmd):
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        sys.exit(result.returncode)
+        exit(result.returncode)
     return result.stdout
 
 
@@ -95,7 +96,7 @@ def main():
     content_command = f"{CONTENT_DIFF} -- {exclude_str}"
     diff = run(content_command)
     if len(diff.encode()) < 4:
-        sys.exit(1)
+        exit(1)
 
     # Get changed file paths (no exclusions, for type analysis and display)
     files = get_changed_files()
@@ -106,9 +107,7 @@ def main():
     has_test = any(path_has_component(f, test_key) for f in files)
 
     # Get spec
-    spec = run(f"curl -s {SPEC_URL}")
-    if len(spec.encode()) < 1024:
-        sys.exit(1)
+    spec = SPEC_PATH.read_text(encoding="utf-8")
 
     # Build changed files block
     files_block = "\n".join(files)
@@ -125,15 +124,11 @@ def main():
     constraint_block = "\n".join(constraints)
 
     # Output formatted blocks
-    block = f"> ref {SPEC_URL}\n"
-    for line in spec.split("\n"):
-        block += f"> {line}\n"
-
+    block = f"{spec}"
     block += "\n```shell"
     block += f"\n$ {LIST_DIFF}\n{files_block}"
     block += f"\n$ {content_command}\n{diff}"
     block += "\n```\n"
-
     block += f"\n{constraint_block}\n"
 
     print(block)
