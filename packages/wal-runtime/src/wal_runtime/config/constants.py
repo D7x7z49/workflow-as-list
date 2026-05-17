@@ -10,7 +10,9 @@ SCHEMA_ROOT = ROOT / "schema"
 CONFIG_SCHEMA_FILE = SCHEMA_ROOT / "config.schema.json"
 
 CACHE_ROOT = ROOT / "cache"
+
 DATA_ROOT = ROOT / "data"
+RUNS_ROOT = DATA_ROOT / "runs"
 
 DEFAULT_CONFIG_DATA = {
     "$schema": CONFIG_SCHEMA_FILE.as_uri(),

@@ -1,11 +1,10 @@
 # test/wal_runtime/execution.unit.test.py
 """Unit tests for the WorkflowRuntime execution loop (run)."""
 
-import pytest
-
 from wal_core.constants import StepMode
 from wal_core.schema import StepLine
 from wal_runtime.hub import WorkflowRuntime
+from wal_runtime.schema import RunFinishedEvent, RunStatus
 
 from ..conftest import make_module
 
@@ -33,7 +32,8 @@ class TestExecution:
         mod = make_module("exec")
         add_step(mod, 1, "hello")
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert fake_executor.agent_calls == ["hello"]
 
     def test_mode_dispatch(self, fake_executor, config, mocker):
@@ -41,7 +41,8 @@ class TestExecution:
         add_step(mod, 1, "cmd", mode=StepMode.SHELL)
         add_step(mod, 2, "ask", mode=StepMode.QUESTION)
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert fake_executor.shell_commands == [("cmd", None)]
         assert fake_executor.questions == ["ask"]
 
@@ -50,7 +51,8 @@ class TestExecution:
         add_step(mod, 1, "compute", tag="res")
         fake_executor.agent_responses["compute"] = "42"
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert runtime.root_env.step_output_map["res"] == "42"
 
     def test_jump_in_module(self, fake_executor, config, mocker):
@@ -62,7 +64,8 @@ class TestExecution:
         add_step(mod, 10, "inside", depth=1, tag="dest")
 
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
 
         # shell command executed
         assert fake_executor.shell_commands == [("jump", None)]
@@ -87,7 +90,8 @@ class TestExecution:
         child_env = runtime.preload_module(child, set())
         parent_env.import_map["sub"] = child_env
         runtime.root_env = parent_env
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert fake_executor.agent_calls == ["start", "child action", "end"]
 
     def test_jump_not_taken_on_false(self, fake_executor, config, mocker):
@@ -97,18 +101,24 @@ class TestExecution:
         # skip target not added – it must not be reached
         fake_executor.question_responses["proceed?"] = False
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert fake_executor.agent_calls == ["fallback"]
 
     def test_jump_to_invalid_label_raises(self, fake_executor, config, mocker):
         mod = make_module("exec_invalid_jump")
         add_step(mod, 1, "bad", mode=StepMode.SHELL, jump="missing")
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        with pytest.raises(ValueError, match="Label 'missing' not found"):
-            runtime.run()
+        events = list(runtime.run())
+        last = events[-1]
+        assert isinstance(last, RunFinishedEvent)
+        assert last.status == RunStatus.FAIL
+        assert last.error is not None
+        assert "Label 'missing' not found" in last.error.message
 
     def test_empty_root_block(self, fake_executor, config, mocker):
         mod = make_module("exec_empty")
         runtime = create_runtime(fake_executor, config, mod, mocker)
-        runtime.run()
+        for _ in runtime.run():
+            pass
         assert fake_executor.agent_calls == []

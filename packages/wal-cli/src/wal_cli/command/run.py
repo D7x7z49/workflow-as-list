@@ -1,15 +1,50 @@
 # packages/wal-cli/src/wal_cli/command/run.py
+
+import hashlib
+from uuid import uuid4
+
 import typer
 
-from wal_core.constants import StepMode
 from wal_core.schema import ImportPathAdapter
-from wal_runtime.pydantic_agent.hub import PydanticAIWorkflowExecutor
+from wal_runtime.schema import EventType, RunFinishedEvent, RunStatus, StepCompletedEvent
 from wal_runtime.hub import WorkflowRuntime
+from wal_cli.constants import RUNS_MAP_FILE, RUNS_ROOT
+from wal_runtime.pydantic_agent.hub import PydanticAIWorkflowExecutor
 
-from wal_cli.schema import CommandContext
+from wal_cli.schema import CLI_RunMeta, CommandContext
 
 
 sub_run_option = typer.Typer(help="Run workflows and interactive sessions")
+
+
+def _run_event_loop(ctx: CommandContext, runtime: WorkflowRuntime, agent: str):
+    run_id = hashlib.sha256(uuid4().bytes).hexdigest()
+    run_meta = CLI_RunMeta(
+        agent=agent,
+        run_id=run_id,
+        module_path=runtime.root_env.context.path,
+        module_hash=runtime.root_env.context.namespace,
+    )
+
+    run_file = RUNS_ROOT / f"{run_id}.jsonl"
+    run_file.touch(exist_ok=True)
+    typer.echo(f"[+] {run_meta.run_id} [{run_meta.status}] <{run_file.absolute()}>")
+
+    for event in runtime.run():
+        event_type = event.event_type
+        if event_type == EventType.STEP_COMPLETED and isinstance(event, StepCompletedEvent):
+            run_file.open("a", encoding="utf-8").write(f"{event.record.model_dump_json()}\n")
+
+        elif event_type == EventType.RUN_FINISHED and isinstance(event, RunFinishedEvent):
+            run_meta.status = event.status
+
+            RUNS_MAP_FILE.open("a", encoding="utf-8").write(f"{run_meta.model_dump_json()}\n")
+
+    if run_meta.status not in [RunStatus.DONE, RunStatus.FAIL]:
+        typer.echo("Run failed", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"[=] {run_meta.run_id} [{run_meta.status}]")
 
 
 @sub_run_option.command("workflow")
@@ -24,41 +59,9 @@ def exec_workflow(
         executor = PydanticAIWorkflowExecutor(agent)
         runtime = WorkflowRuntime(path, ctx.config, executor)
 
-        step_count = 0
-        for record in runtime.iter_steps():
-            step_count += 1
-            step = record.step
+        _run_event_loop(ctx, runtime, agent)
 
-            mode_str = f"[{step.mode.value}]"
-            if step.tag:
-                header = f"$ ({step.tag}) {mode_str} {record.resolved_text}"
-            else:
-                header = f"$ {mode_str} {record.resolved_text}"
-
-            typer.echo(header)
-
-            match step.mode:
-                case StepMode.PLAIN:
-                    output = record.result_text
-                case StepMode.SHELL:
-                    output = record.result_text.strip() if record.success else f"ERROR:\n{record.result_text.strip()}"
-                case StepMode.QUESTION:
-                    output = "Yes" if record.success else "No"
-                case _:
-                    output = "unknown mode"
-
-            typer.echo("---")
-            for line in output.splitlines():
-                if line.strip():
-                    typer.echo(f"{line}")
-            status = "[OK]" if record.success else "[NO]"
-            typer.echo(f"{status}")
-            typer.echo("---")
-
-        typer.echo("\n---\n")
-        typer.echo(f"Workflow {file} executed successfully with agent {agent}")
     except Exception as e:
-        typer.echo("\n---\n")
         typer.echo(f"Error executing workflow: {e}", err=True)
         raise typer.Exit(1)
 
