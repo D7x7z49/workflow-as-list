@@ -1,0 +1,14 @@
+# docs/deepwiki.repo.list
+# This is a list of repositories that are used in the DeepWiki documentation.
+# Need `DeepWiki MCP` or `DeepWiki Skill` tool.
+
+# Gihub Notebooks Repositories
+github/docs      # github docs, about github actions
+cli/cli          # github cli, `gh` command
+
+# Python Notebooks Repositories
+TheAlgorithms/Python
+astral-sh/uv
+pytest-dev/pytest
+pydantic/pydantic
+fastapi/typer
