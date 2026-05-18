@@ -20,7 +20,7 @@
 (* ========================================================================= *)
 
 workflow = { line } ;
-line     = line_content , eol ;
+line     = content , eol ;
 eol      = "\n" | "\r\n" ;
 
 (* ========================================================================= *)
@@ -33,12 +33,13 @@ eol      = "\n" | "\r\n" ;
    - Indented lines are only comment or step. Each indent level adds two spaces.
 *)
 
-line_content = empty_line
-             | comment_line
-             | import_line
-             | variable_line
-             | step_line
-             | indented_content ;
+content = empty_line
+        | comment_line
+        | import_line
+        | variable_line
+        | step_line
+        | indented_content
+        ;
 
 indented_content = indent , ( comment_line | step_line ) ;
 indent           = { "  " } ;
@@ -146,7 +147,7 @@ identifier = letter , { letter | digit | "-" } ;
 letter = "A" - "Z" | "a" - "z" ;
 digit  = "0" - "9" ;
 
-plain_text   = { ? regex:[^\r\n] ? } ;
+plain_text = { ? regex:/[^\r\n]*/ ? } ;
 
 (*
    Symbol is any printable ASCII character except letter, digit, and newline.

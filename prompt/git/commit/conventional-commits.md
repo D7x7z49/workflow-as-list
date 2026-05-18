@@ -1,5 +1,5 @@
 <!-- prompt/git/commit/conventional-commits.md -->
-`Conventional Commits` strict subset rules explained:
+`Conventional Commits` strict subset rules explained.
 
 This is a stricter subset of the `Conventional Commits v1.0.0` specification.
 ```ebnf
@@ -14,7 +14,18 @@ git_commit_message = header, [ body ], [ footer ] ;
 (* ========================================================================= *)
 
 header = type, [ scope ], [ "!" ], ": ", line ;
-type   = "feat" | "fix" | "docs" | "style" | "refactor" | "perf" | "test" | "build" | "ci" | "chore" | "revert" ;
+type   = "feat"
+       | "fix"
+       | "docs"
+       | "style"
+       | "refactor"
+       | "perf"
+       | "test"
+       | "build"
+       | "ci"
+       | "chore"
+       | "revert"
+       ;
 scope  = "(", identifier, ")" ;
 
 (* ========================================================================= *)
@@ -49,7 +60,7 @@ mark = "BREAKING-CHANGE" | "REFERENCE" ;
 identifier = ? regex:[A-Za-z][A-Za-z0-9-]* ? ;
 
 line    = content, eol ;
-content = ? regex:[^\r\n] ? ;
+content = ? regex:/[^\n\r]*/ ? ;
 eol     = "\n" | "\r\n" ;
 ```
 
