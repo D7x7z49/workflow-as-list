@@ -122,7 +122,7 @@ def get_last_tag(package_name: str) -> tuple[str | None, str | None]:
 
 
 def get_commits_since(tag: str) -> list[tuple[str, str]]:
-    cmd = ["git", "log", f"{tag}..HEAD", "--reverse", "--pretty=format:%h %s"]
+    cmd = ["git", "log", "--first-parent", f"{tag}..HEAD", "--reverse", "--pretty=format:%h %s"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         exit(f"[!] git log failed:\n{result.stderr.strip()}")
@@ -150,7 +150,7 @@ def parse_version(version: str) -> tuple[int, int, int, str | None]:
 
 
 def is_package_commit(hash: str, path: str | Path) -> bool:
-    cmd = ["git", "show", "--name-only", "--pretty=format:", hash]
+    cmd = ["git", "show", "--first-parent", hash, "--name-only", "--pretty=format:"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         return False
