@@ -5,21 +5,29 @@ from typing import Iterator, Generator
 
 from pydantic import AnyUrl
 
-from wal_core.hub import parse_workflow
+from wal_core.constants import StepMode
 from wal_core.schema import (
     ImportPath,
     ImportLine,
     SHA256Hash,
     StepLine,
-    StepMode,
     VariableLine,
     WorkflowModule,
 )
+from wal_core.hub import parse_workflow
 from wal_core.util import build_block_from_step, build_root_block
 
-from wal_runtime.config.schema import RuntimeConfig
 from wal_runtime.constants import REMOTE_WORKFLOW_CACHE_ROOT
-from wal_runtime.schema import Environment, Frame, StepRecord
+from wal_runtime.schema import (
+    Environment,
+    ErrorInfo,
+    Frame,
+    RunEvent,
+    StepCompletedEvent,
+    StepRecord,
+    RunFinishedEvent,
+    RunStatus,
+)
 from wal_runtime.util import (
     CircularImportError,
     compute_file_hash,
@@ -29,6 +37,7 @@ from wal_runtime.util import (
     resolve_text,
     WorkflowExecutor,
 )
+from wal_runtime.config.schema import RuntimeConfig
 
 
 class WorkflowRuntime:
@@ -109,9 +118,14 @@ class WorkflowRuntime:
     # ------------------------------------------------------------------
     #  Execution
     # ------------------------------------------------------------------
-    def run(self) -> None:
-        for _ in self.iter_steps():
-            pass
+    def run(self) -> Generator[RunEvent, None, None]:
+        try:
+            for data in self.iter_steps():
+                yield StepCompletedEvent(record=data)
+            yield RunFinishedEvent(status=RunStatus.DONE)
+        except Exception as e:
+            error_info = ErrorInfo.from_exception(e)
+            yield RunFinishedEvent(status=RunStatus.FAIL, error=error_info)
 
     def iter_steps(self) -> Generator[StepRecord, None, None]:
         root_block = build_root_block(self.root_module)
@@ -153,6 +167,9 @@ class WorkflowRuntime:
 
             yield StepRecord(
                 step=step,
+                pc=frame.pc,
+                module_path=frame.environment.context.path,
+                module_hash=frame.environment.context.namespace,
                 resolved_text=resolved_text,
                 result_text=result_text,
                 success=success,
@@ -178,5 +195,7 @@ class WorkflowRuntime:
 
                 # Push new frame with the target environment
                 self.frames.append(Frame(environment=target_env, block=sub_block, pc=0))
+            elif step.jump is None and not success:
+                raise RuntimeError(f"Step failed at {step.lineno} line in {step.text}")
             else:
                 frame.pc += 1

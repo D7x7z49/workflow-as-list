@@ -28,4 +28,4 @@ release:
 	uv run python scripts/auto_version.py
 
 gen-commit-msg:
-	uv run wal-cli run workflow ./example/git/commit/gen-git-commit-message.wal --agent test
+	uv run wal-cli run workflow ./example/git/commit/gen-git-commit-message.wal --agent test --format id | xargs uv run wal-cli run show --limit 8

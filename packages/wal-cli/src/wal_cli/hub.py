@@ -3,6 +3,7 @@ import typer
 
 from wal_runtime.config.hub import load_config
 
+from wal_cli.constants import RUNS_MAP_FILE
 from wal_cli.schema import CommandContext
 from wal_cli.command.config import sub_config_option
 from wal_cli.command.agent import sub_agent_option
@@ -20,6 +21,10 @@ app.add_typer(sub_run_option, name="run")
 def main_handler(ctx: typer.Context):
     config = load_config()
     ctx.obj = CommandContext(config=config)
+
+    # Ensure RUNS_MAP_FILE exists
+    RUNS_MAP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    RUNS_MAP_FILE.touch(exist_ok=True)
 
 
 def exec_cli():
