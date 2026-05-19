@@ -4,7 +4,7 @@ import hashlib
 from typing import Optional, Tuple
 
 from wal_core.schema import WorkflowModule, ImportPathAdapter
-from wal_runtime.config.schema import RuntimeConfig, WhiteList
+from wal_cli.config.schema import RuntimeConfig, WhiteList
 from wal_runtime.util import WorkflowExecutor
 
 

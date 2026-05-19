@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/config/util.py
+# packages/wal-cli/src/wal_cli/config/util.py
 
 import re
 import subprocess

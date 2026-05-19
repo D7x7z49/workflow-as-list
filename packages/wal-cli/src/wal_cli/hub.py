@@ -1,13 +1,13 @@
 # packages/wal-cli/src/wal_cli/hub.py
 import typer
 
-from wal_runtime.config.hub import load_config
-
-from wal_cli.constants import RUNS_MAP_FILE
-from wal_cli.schema import CommandContext
+from wal_cli.config.constants import RUNS_MAP_FILE
+from wal_cli.config.hub import load_config
 from wal_cli.command.config import sub_config_option
 from wal_cli.command.agent import sub_agent_option
 from wal_cli.command.run import sub_run_option
+
+from wal_cli.schema import CommandContext
 
 app = typer.Typer(rich_markup_mode=None, pretty_exceptions_enable=False)
 

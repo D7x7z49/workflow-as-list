@@ -5,11 +5,11 @@ import json
 import typer
 from pydantic import ValidationError
 
-from wal_runtime.config.constants import CONFIG_FILE, CONFIG_SCHEMA_FILE
+from wal_cli.config.schema import RuntimeConfig
+from wal_cli.config.util import format_model_structure
+from wal_cli.config.constants import CONFIG_FILE, CONFIG_SCHEMA_FILE
 
 from wal_cli.schema import CommandContext
-from wal_runtime.config.schema import RuntimeConfig
-from wal_runtime.config.util import format_model_structure
 
 
 sub_config_option = typer.Typer(help="manage wal configuration")

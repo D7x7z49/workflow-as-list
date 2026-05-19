@@ -12,6 +12,15 @@ from pydantic import BaseModel, Field, NonNegativeInt, PlainSerializer
 from wal_core.schema import Identifier, ImportPath, SHA256Hash, StepLine, WorkflowModule
 
 
+class WhiteList(BaseModel):
+    domain: list[str]
+    command: list[str]
+
+
+class RuntimeConfigProtocol(BaseModel):
+    white_list: WhiteList
+
+
 class ErrorInfo(BaseModel):
     exception_type: str
     message: str

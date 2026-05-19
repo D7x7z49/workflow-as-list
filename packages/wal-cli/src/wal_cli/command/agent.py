@@ -3,9 +3,10 @@
 import typer
 from pydantic_ai import AgentSpec
 
+from wal_cli.pydantic_agent.constants import AGENT_ROOT
+from wal_cli.pydantic_agent.hub import init_agent_spec_file
+
 from wal_cli.schema import CommandContext
-from wal_runtime.pydantic_agent.constants import AGENT_ROOT
-from wal_runtime.pydantic_agent.hub import init_agent_spec_file
 
 sub_agent_option = typer.Typer(help="manage wal agents")
 

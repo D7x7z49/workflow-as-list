@@ -3,7 +3,8 @@
 from pydantic import BaseModel
 
 from wal_runtime.schema import RunMeta
-from wal_runtime.config.schema import RuntimeConfig
+
+from wal_cli.config.schema import RuntimeConfig
 
 
 class CommandContext(BaseModel):

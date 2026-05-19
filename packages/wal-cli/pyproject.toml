@@ -18,6 +18,7 @@ classifiers = [
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
 dependencies = [
+    "pydantic-ai>=1.94.0",
     "typer>=0.25.1",
     "d49-wal-core",
     "d49-wal-runtime",

@@ -1,11 +1,11 @@
-# packages/wal-runtime/src/wal_runtime/config/hub.py
+# packages/wal-cli/src/wal_cli/config/hub.py
 
 import json
 import threading
 from functools import lru_cache
 
-from wal_runtime.config.constants import CONFIG_FILE, CONFIG_SCHEMA_FILE, DEFAULT_CONFIG_DATA
-from wal_runtime.config.schema import RuntimeConfig
+from wal_cli.config.constants import CONFIG_FILE, CONFIG_SCHEMA_FILE, DEFAULT_CONFIG_DATA
+from wal_cli.config.schema import RuntimeConfig
 
 
 _load_lock = threading.Lock()

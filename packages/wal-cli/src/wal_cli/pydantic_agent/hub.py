@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/pydantic_agent/hub.py
+# packages/wal-cli/src/wal_cli/pydantic_agent/hub.py
 
 import json
 import subprocess
@@ -6,10 +6,10 @@ from typing import Optional
 
 from pydantic_ai import Agent, AgentSpec, ToolOutput
 
-from wal_runtime.pydantic_agent.constants import AGENT_ROOT, AGENT_SPEC_SCHEMA_ROOT
-from wal_runtime.pydantic_agent.util import get_model_infrastructure
-
 from wal_runtime.util import WorkflowExecutor
+
+from wal_cli.pydantic_agent.constants import AGENT_ROOT, AGENT_SPEC_SCHEMA_ROOT
+from wal_cli.pydantic_agent.util import get_model_infrastructure
 
 
 def get_agent(identity: str) -> Agent:

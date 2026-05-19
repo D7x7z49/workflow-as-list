@@ -16,9 +16,11 @@ from wal_runtime.schema import (
     StepRecord,
 )
 from wal_runtime.hub import WorkflowRuntime
-from wal_cli.constants import ID_PREFIX_LENGTH, RUNS_MAP_FILE, RUNS_ROOT
-from wal_runtime.pydantic_agent.hub import PydanticAIWorkflowExecutor
 
+from wal_cli.config.constants import ROOT, RUNS_ROOT, RUNS_MAP_FILE
+from wal_cli.pydantic_agent.hub import PydanticAIWorkflowExecutor
+
+from wal_cli.constants import ID_PREFIX_LENGTH
 from wal_cli.schema import CLI_RunMeta, CommandContext
 
 
@@ -69,7 +71,7 @@ def exec_workflow(
     try:
         path = ImportPathAdapter.validate_python(file)
         executor = PydanticAIWorkflowExecutor(agent)
-        runtime = WorkflowRuntime(path, ctx.config, executor)
+        runtime = WorkflowRuntime(ROOT, path, ctx.config, executor)
 
         run_meta = _run_event_loop(ctx, runtime, agent)
 

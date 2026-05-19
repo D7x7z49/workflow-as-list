@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/pydantic_agent/schema.py
+# packages/wal-cli/src/wal_cli/pydantic_agent/schema.py
 
 import math
 from enum import Enum
@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, computed_field
 
-from wal_runtime.config.schema import ModelConfig
+from wal_cli.config.schema import ModelConfig
 
 
 class ContextHealth(str, Enum):

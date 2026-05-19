@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/config/constants.py
+# packages/wal-cli/src/wal_cli/config/constants.py
 
 from os import environ
 from pathlib import Path
@@ -12,7 +12,9 @@ CONFIG_SCHEMA_FILE = SCHEMA_ROOT / "config.schema.json"
 CACHE_ROOT = ROOT / "cache"
 
 DATA_ROOT = ROOT / "data"
+
 RUNS_ROOT = DATA_ROOT / "runs"
+RUNS_MAP_FILE = RUNS_ROOT / "runs_map.jsonl"
 
 DEFAULT_CONFIG_DATA = {
     "$schema": CONFIG_SCHEMA_FILE.as_uri(),

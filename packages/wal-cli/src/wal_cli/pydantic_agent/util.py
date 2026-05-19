@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/pydantic_agent/util.py
+# packages/wal-cli/src/wal_cli/pydantic_agent/util.py
 
 # Provider imports
 import hashlib
@@ -34,8 +34,8 @@ from pydantic_ai.models.function import _estimate_usage
 from pydantic_ai.capabilities import AbstractCapability
 
 # local imports
-from wal_runtime.config.schema import ProviderType
-from wal_runtime.config.hub import load_config
+from wal_cli.config.schema import ProviderType
+from wal_cli.config.hub import load_config
 
 
 def get_model_infrastructure(model_id: str):

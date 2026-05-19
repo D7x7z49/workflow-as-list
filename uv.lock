@@ -636,6 +636,7 @@ source = { editable = "packages/wal-cli" }
 dependencies = [
     { name = "d49-wal-core" },
     { name = "d49-wal-runtime" },
+    { name = "pydantic-ai" },
     { name = "typer" },
 ]
 
@@ -643,6 +644,7 @@ dependencies = [
 requires-dist = [
     { name = "d49-wal-core", editable = "packages/wal-core" },
     { name = "d49-wal-runtime", editable = "packages/wal-runtime" },
+    { name = "pydantic-ai", specifier = ">=1.94.0" },
     { name = "typer", specifier = ">=0.25.1" },
 ]
 
@@ -663,14 +665,10 @@ version = "0.1.1rc1"
 source = { editable = "packages/wal-runtime" }
 dependencies = [
     { name = "d49-wal-core" },
-    { name = "pydantic-ai" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "d49-wal-core", editable = "packages/wal-core" },
-    { name = "pydantic-ai", specifier = ">=1.94.0" },
-]
+requires-dist = [{ name = "d49-wal-core", editable = "packages/wal-core" }]
 
 [[package]]
 name = "distlib"

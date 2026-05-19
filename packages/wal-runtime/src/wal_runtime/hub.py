@@ -17,12 +17,12 @@ from wal_core.schema import (
 from wal_core.hub import parse_workflow
 from wal_core.util import build_block_from_step, build_root_block
 
-from wal_runtime.constants import REMOTE_WORKFLOW_CACHE_ROOT
 from wal_runtime.schema import (
     Environment,
     ErrorInfo,
     Frame,
     RunEvent,
+    RuntimeConfigProtocol,
     StepCompletedEvent,
     StepRecord,
     RunFinishedEvent,
@@ -37,12 +37,12 @@ from wal_runtime.util import (
     resolve_text,
     WorkflowExecutor,
 )
-from wal_runtime.config.schema import RuntimeConfig
 
 
 class WorkflowRuntime:
-    def __init__(self, path: ImportPath, config: RuntimeConfig, executor: WorkflowExecutor) -> None:
-        self.config: RuntimeConfig = config
+    def __init__(self, home: Path, path: ImportPath, config: RuntimeConfigProtocol, executor: WorkflowExecutor) -> None:
+        self.home: Path = home
+        self.config: RuntimeConfigProtocol = config
         self.executor: WorkflowExecutor = executor
         self.module_cache: dict[SHA256Hash, WorkflowModule] = {}
 
@@ -64,6 +64,10 @@ class WorkflowRuntime:
         self.module_cache[namespace] = module
         return module
 
+    @property
+    def _cache_path(self):
+        return self.home / "cache"
+
     def _compute_namespace(self, path: ImportPath) -> SHA256Hash:
         local_path = path if isinstance(path, Path) else self._ensure_cached_remote(str(path))
         return compute_file_hash(local_path)
@@ -84,10 +88,11 @@ class WorkflowRuntime:
         return iter_local_lines(local_path)
 
     def _ensure_cached_remote(self, url: str) -> Path:
+        remote_cache_dir = self._cache_path / "remote"
         allowed = self.config.white_list.domain if self.config.white_list else []
         return fetch_and_cache_remote(
             url=url,
-            cache_dir=REMOTE_WORKFLOW_CACHE_ROOT,
+            cache_dir=remote_cache_dir,
             allowed_domains=allowed,
         )
 

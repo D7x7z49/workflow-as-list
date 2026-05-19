@@ -2,12 +2,12 @@
 
 import re
 import hashlib
+import urllib.error
+import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Iterator, List, Optional, Tuple
 from abc import ABC, abstractmethod
-
-import httpx
 
 from wal_core.constants import SYMBOL_DOT
 from wal_core.schema import (
@@ -81,15 +81,13 @@ def fetch_and_cache_remote(url: str, cache_dir: Path, allowed_domains: List[str]
     if not cache_file.exists():
         cache_dir.mkdir(parents=True, exist_ok=True)
         try:
-            with httpx.Client(timeout=30) as client:
-                response = client.get(url)
-                response.raise_for_status()
+            with urllib.request.urlopen(url, timeout=30) as response:
                 with cache_file.open("w", encoding="utf-8") as out:
-                    for line in response.iter_lines():
-                        out.write(line + "\n")
-        except httpx.HTTPStatusError as exc:
-            raise RuntimeError(f"http error {exc.response.status_code} for {url}") from exc
-        except httpx.RequestError as exc:
+                    for line in response:
+                        out.write(line.decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"http error {exc.code} for {url}") from exc
+        except urllib.error.URLError as exc:
             raise RuntimeError(f"network error while fetching {url}") from exc
 
     return cache_file

@@ -1,4 +1,4 @@
-# packages/wal-runtime/src/wal_runtime/config/schema.py
+# packages/wal-cli/src/wal_cli/config/schema.py
 
 from os import environ
 from enum import Enum
@@ -6,12 +6,9 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from wal_runtime.config.util import get_pass, parse_suffixed_number
+from wal_runtime.schema import RuntimeConfigProtocol
 
-
-class WhiteList(BaseModel):
-    domain: list[str]
-    command: list[str]
+from wal_cli.config.util import get_pass, parse_suffixed_number
 
 
 class ModelConfig(BaseModel):
@@ -63,8 +60,7 @@ class ProviderConfig(BaseModel):
         return v
 
 
-class RuntimeConfig(BaseModel):
-    white_list: WhiteList
+class RuntimeConfig(RuntimeConfigProtocol):
     providers: dict[str, ProviderConfig] = Field(..., description="The providers supported by the agent")
 
     def get_provider_and_model_config(self, provider_name: str, model_name: str):
