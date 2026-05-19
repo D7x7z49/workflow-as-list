@@ -2,10 +2,18 @@
 [project]
 name = "workflow-as-list"
 version = "0.1.0"
-description = "Add your description here"
+description = "A language to describe agent task workflows with a syntax free from implementation details."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
+authors = [
+    { name = "D7x7z49", email = "85430783+D7x7z49@users.noreply.github.com" }
+]
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/D7x7z49/workflow-as-list"
+Issues = "https://github.com/D7x7z49/workflow-as-list/issues"
 
 [dependency-groups]
 dev = [

@@ -2,16 +2,29 @@
 [project]
 name = "d49-wal-runtime"
 version = "0.1.1rc1"
-description = "Add your description here"
+description = "Python runtime implementation for D7x7z49/workflow-as-list."
 readme = "README.md"
 authors = [
     { name = "D7x7z49", email = "85430783+D7x7z49@users.noreply.github.com" }
 ]
+keywords = ["workflow", "agent", "task", "runtime"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
 requires-python = ">=3.12"
+license = "GPL-3.0-or-later"
 dependencies = [
     "pydantic-ai>=1.94.0",
     "d49-wal-core",
 ]
+
+[project.urls]
+Repository = "https://github.com/D7x7z49/workflow-as-list"
+Issues = "https://github.com/D7x7z49/workflow-as-list/issues"
 
 [project.scripts]
 wal-runtime = "wal_runtime:main"
