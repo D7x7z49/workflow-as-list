@@ -17,45 +17,63 @@ def add_step(module, lineno, text, *, depth=0, mode=StepMode.PLAIN, tag=None, ju
     return step
 
 
-def create_runtime(executor, config, root_mod, mocker, extra_mods=None):
+def create_runtime(*, executor, config, root_mod, mocker, extra_mods=None, home):
     """Mock WorkflowRuntime.load_module and return a runtime instance."""
     modules = {str(root_mod.path): root_mod}
     if extra_mods:
         for m in extra_mods:
             modules[str(m.path)] = m
     mocker.patch.object(WorkflowRuntime, "load_module", side_effect=lambda path: modules[str(path)])
-    return WorkflowRuntime(root_mod.path, config, executor)
+    return WorkflowRuntime(home=home, path=root_mod.path, config=config, executor=executor)
 
 
 class TestExecution:
-    def test_plain_step(self, fake_executor, config, mocker):
+    def test_plain_step(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec")
         add_step(mod, 1, "hello")
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
         assert fake_executor.agent_calls == ["hello"]
 
-    def test_mode_dispatch(self, fake_executor, config, mocker):
+    def test_mode_dispatch(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_dispatch")
         add_step(mod, 1, "cmd", mode=StepMode.SHELL)
         add_step(mod, 2, "ask", mode=StepMode.QUESTION)
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
         assert fake_executor.shell_commands == [("cmd", None)]
         assert fake_executor.questions == ["ask"]
 
-    def test_output_stored(self, fake_executor, config, mocker):
+    def test_output_stored(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_output")
         add_step(mod, 1, "compute", tag="res")
         fake_executor.agent_responses["compute"] = "42"
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
         assert runtime.root_env.step_output_map["res"] == "42"
 
-    def test_jump_in_module(self, fake_executor, config, mocker):
+    def test_jump_in_module(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_jump")
         add_step(mod, 1, "step1")
         add_step(mod, 2, "jump", mode=StepMode.SHELL, jump="dest")
@@ -63,7 +81,13 @@ class TestExecution:
         # inside becomes child of step3 → part of root block
         add_step(mod, 10, "inside", depth=1, tag="dest")
 
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
 
@@ -77,7 +101,7 @@ class TestExecution:
         # once via the jump sub‑frame
         assert fake_executor.agent_calls.count("inside") == 2
 
-    def test_jump_across_modules(self, fake_executor, config, mocker):
+    def test_jump_across_modules(self, fake_executor, config, mocker, workspace):
         parent = make_module("p", namespace="1" * 64)
         child = make_module("c", namespace="2" * 64)
         add_step(parent, 1, "start")
@@ -85,7 +109,14 @@ class TestExecution:
         add_step(parent, 3, "end")
         add_step(child, 1, "child action", tag="act")
 
-        runtime = create_runtime(fake_executor, config, parent, mocker, extra_mods=[child])
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=parent,
+            mocker=mocker,
+            extra_mods=[child],
+            home=workspace,
+        )
         parent_env = runtime.preload_module(parent, set())
         child_env = runtime.preload_module(child, set())
         parent_env.import_map["sub"] = child_env
@@ -94,21 +125,33 @@ class TestExecution:
             pass
         assert fake_executor.agent_calls == ["start", "child action", "end"]
 
-    def test_jump_not_taken_on_false(self, fake_executor, config, mocker):
+    def test_jump_not_taken_on_false(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_false_jump")
         add_step(mod, 1, "proceed?", mode=StepMode.QUESTION, jump="skip")
         add_step(mod, 2, "fallback")
         # skip target not added – it must not be reached
         fake_executor.question_responses["proceed?"] = False
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
         assert fake_executor.agent_calls == ["fallback"]
 
-    def test_jump_to_invalid_label_raises(self, fake_executor, config, mocker):
+    def test_jump_to_invalid_label_raises(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_invalid_jump")
         add_step(mod, 1, "bad", mode=StepMode.SHELL, jump="missing")
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         events = list(runtime.run())
         last = events[-1]
         assert isinstance(last, RunFinishedEvent)
@@ -116,9 +159,15 @@ class TestExecution:
         assert last.error is not None
         assert "Label 'missing' not found" in last.error.message
 
-    def test_empty_root_block(self, fake_executor, config, mocker):
+    def test_empty_root_block(self, fake_executor, config, mocker, workspace):
         mod = make_module("exec_empty")
-        runtime = create_runtime(fake_executor, config, mod, mocker)
+        runtime = create_runtime(
+            executor=fake_executor,
+            config=config,
+            root_mod=mod,
+            mocker=mocker,
+            home=workspace,
+        )
         for _ in runtime.run():
             pass
         assert fake_executor.agent_calls == []

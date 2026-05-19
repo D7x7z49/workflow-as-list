@@ -4,8 +4,9 @@ import hashlib
 from typing import Optional, Tuple
 
 from wal_core.schema import WorkflowModule, ImportPathAdapter
-from wal_cli.config.schema import RuntimeConfig, WhiteList
+from wal_runtime.schema import WhiteList
 from wal_runtime.util import WorkflowExecutor
+from wal_cli.config.schema import RuntimeConfig
 
 
 class FakeWorkflowExecutor(WorkflowExecutor):
@@ -57,3 +58,13 @@ def make_module(name: str, namespace: Optional[str] = None) -> WorkflowModule:
 @pytest.fixture
 def module_factory():
     return make_module
+
+
+@pytest.fixture
+def workspace(tmp_path):
+    """Provide a temporary workspace root for WorkflowRuntime.
+
+    This replaces bare tmp_path to isolate workspace setup logic in one place.
+    Add pre-created directories or config files here as the project grows.
+    """
+    return tmp_path
