@@ -7,6 +7,7 @@ from uuid import uuid4
 import typer
 from pydantic import NonNegativeInt
 
+from wal_cli.agent.schema import AgentSpec
 from wal_core.schema import ImportPathAdapter
 from wal_runtime.schema import (
     EventType,
@@ -17,14 +18,14 @@ from wal_runtime.schema import (
 )
 from wal_runtime.hub import WorkflowRuntime
 
-from wal_cli.config.constants import ROOT, RUNS_ROOT, RUNS_MAP_FILE
-from wal_cli.pydantic_agent.hub import PydanticAIWorkflowExecutor
+from wal_cli.config.constants import AGENT_ROOT, ROOT, RUNS_ROOT, RUNS_MAP_FILE
+from wal_cli.agent.hub import Agent
 
 from wal_cli.constants import ID_PREFIX_LENGTH
 from wal_cli.schema import CLI_RunMeta, CommandContext
 
 
-sub_run_option = typer.Typer(help="Run workflows and interactive sessions")
+sub_run_option = typer.Typer(help="run workflows and interactive sessions")
 
 
 def _run_event_loop(ctx: CommandContext, runtime: WorkflowRuntime, agent: str) -> CLI_RunMeta:
@@ -54,7 +55,7 @@ def _run_event_loop(ctx: CommandContext, runtime: WorkflowRuntime, agent: str) -
                 f.flush()
 
     if run_meta.status not in [RunStatus.DONE, RunStatus.FAIL]:
-        typer.echo("Run failed", err=True)
+        typer.echo("run failed", err=True)
         raise typer.Exit(1)
 
     return run_meta
@@ -64,13 +65,18 @@ def _run_event_loop(ctx: CommandContext, runtime: WorkflowRuntime, agent: str) -
 def exec_workflow(
     cxt: typer.Context,
     file: str,
-    agent: str = typer.Option(..., "--agent", help="agent identity"),
-    format: str = typer.Option("text", "--format", help="Output format: text, json, id"),
+    agent: str = typer.Option(..., "--agent", help="agent name"),
+    format: str = typer.Option("text", "--format", help="output format: text, json, id"),
 ) -> None:
     ctx: CommandContext = cxt.obj
+    spec = AgentSpec.from_json_file_by_name(agent, AGENT_ROOT)
+    if spec is None:
+        typer.echo(f"agent '{agent}' not found at <{AGENT_ROOT}>", err=True)
+        raise typer.Exit(1)
+
     try:
         path = ImportPathAdapter.validate_python(file)
-        executor = PydanticAIWorkflowExecutor(agent)
+        executor = Agent(spec, ctx.config.agent_config)
         runtime = WorkflowRuntime(ROOT, path, ctx.config, executor)
 
         run_meta = _run_event_loop(ctx, runtime, agent)
@@ -87,7 +93,7 @@ def exec_workflow(
             typer.echo(f"[#E] {run_id[:ID_PREFIX_LENGTH]} [{run_meta.status.value}]")
 
     except Exception as e:
-        typer.echo(f"Error executing workflow: {e}", err=True)
+        typer.echo(f"error executing workflow: {e}", err=True)
         raise typer.Exit(1)
 
 
@@ -97,7 +103,7 @@ def list_runs(
     reverse: bool = typer.Option(False, "--reverse", help="Reverse order"),
 ) -> None:
     if not RUNS_MAP_FILE.exists():
-        typer.echo("No runs found")
+        typer.echo("no runs found")
         return
 
     runs: list[CLI_RunMeta] = []
@@ -112,7 +118,7 @@ def list_runs(
                 runs.pop(0) if reverse else runs.pop()
 
     if len(runs) == 0:
-        typer.echo("No run data found")
+        typer.echo("no run data found")
         return
 
     for run in runs:
@@ -123,12 +129,12 @@ def list_runs(
 
 @sub_run_option.command("show")
 def show_run(
-    id: str = typer.Argument(..., help="Run ID (full hash or 8-char prefix)"),
-    index: NonNegativeInt = typer.Option(1, "--index", help="Step index"),
-    limit: NonNegativeInt = typer.Option(1, "--limit", help="Number of steps to show"),
+    id: str = typer.Argument(..., help="run id (full hash or 8-char prefix)"),
+    index: NonNegativeInt = typer.Option(1, "--index", help="step index"),
+    limit: NonNegativeInt = typer.Option(1, "--limit", help="number of steps to show"),
 ) -> None:
     if not RUNS_MAP_FILE.exists():
-        typer.echo("No runs found")
+        typer.echo("no runs found")
         return
 
     run_meta: CLI_RunMeta | None = None

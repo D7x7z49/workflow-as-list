@@ -34,7 +34,7 @@ def get_config(
             value = value[k]
         typer.echo(json.dumps(value, indent=2))
     except (KeyError, TypeError):
-        typer.echo(f"Key '{key}' not found", err=True)
+        typer.echo(f"key '{key}' not found", err=True)
         raise typer.Exit(1)
 
 
@@ -50,7 +50,7 @@ def set_config(
     try:
         parsed_value = json.loads(value)
     except json.JSONDecodeError:
-        typer.echo("Value must be valid JSON", err=True)
+        typer.echo("value must be valid JSON", err=True)
         raise typer.Exit(1)
 
     # Get current config as dict
@@ -76,13 +76,13 @@ def set_config(
         # Write to file
         CONFIG_FILE.write_text(json.dumps(data, indent=2))
 
-        typer.echo(f"Set {key} = {parsed_value}")
+        typer.echo(f"set {key} = {parsed_value}")
 
     except (KeyError, TypeError) as e:
-        typer.echo(f"Key '{key}' not found: {e}", err=True)
+        typer.echo(f"key '{key}' not found: {e}", err=True)
         raise typer.Exit(1)
     except ValidationError as e:
-        typer.echo(f"Validation error: {e}", err=True)
+        typer.echo(f"validation error: {e}", err=True)
         raise typer.Exit(1)
 
 

@@ -1,44 +1,44 @@
 # packages/wal-cli/src/wal_cli/command/agent.py
 
+import uuid
+
 import typer
-from pydantic_ai import AgentSpec
 
-from wal_cli.pydantic_agent.constants import AGENT_ROOT
-from wal_cli.pydantic_agent.hub import init_agent_spec_file
-
-from wal_cli.schema import CommandContext
+from wal_cli.agent.schema import AgentSpec
+from wal_cli.config.constants import AGENT_ROOT, AGENT_SPEC_SCHEMA_FILE, SCHEMA_ROOT
 
 sub_agent_option = typer.Typer(help="manage wal agents")
 
 
+@sub_agent_option.callback()
+def agent_handler(ctx: typer.Context):
+    AGENT_ROOT.mkdir(parents=True, exist_ok=True)
+    SCHEMA_ROOT.mkdir(parents=True, exist_ok=True)
+
+
 @sub_agent_option.command("list")
 def list_agents():
-    if not AGENT_ROOT.exists():
-        typer.echo("No agents directory found")
-        return
-
-    agent_files = list(AGENT_ROOT.glob("*.spec.json"))
+    agent_files = sorted(AGENT_ROOT.glob("*.agent.json"))
     if not agent_files:
-        typer.echo("No agents found")
+        typer.echo("no agents found")
         return
 
-    typer.echo("Available agents:")
-    for agent_file in sorted(agent_files):
-        identity = agent_file.stem
-        agent_spec = AgentSpec.from_file(agent_file)
-        typer.echo(f"- {identity} ({agent_spec.model}) <{str(agent_file)}>")
+    for agent_file in agent_files:
+        spec = AgentSpec.from_json_file(agent_file)
+        typer.echo(f"- {spec.name} at <{agent_file}>")
 
 
 @sub_agent_option.command("init")
 def init_agent(
-    cxt: typer.Context,
-    identity: str = typer.Argument(..., help="agent identity, spec file name"),
-    model: str = typer.Option(..., "--model", "-m", help="model id, set `provider:model` format"),
+    name: str = typer.Argument(..., help="agent name"),
+    model: str = typer.Option(..., "--model", "-m", help="model id, `provider:model` format"),
 ):
-    context: CommandContext = cxt.obj
-    is_valid, data = context.config.validate_model_id(model)
-    if not is_valid:
-        typer.echo(data, err=True)
-        raise typer.Exit(1)
+    for spec_file in AGENT_ROOT.glob("*.agent.json"):
+        spec = AgentSpec.from_json_file(spec_file)
+        if spec.name == name:
+            typer.echo(f"agent '{name}' already exists at <{spec_file}>", err=True)
+            raise typer.Exit(1)
 
-    init_agent_spec_file(identity, model)
+    spec = AgentSpec(id=uuid.uuid4(), name=name, model=model)
+    spec_file = spec.to_json_file(AGENT_ROOT, AGENT_SPEC_SCHEMA_FILE)
+    typer.echo(f"agent '{name}' initialized at <{spec_file}>")
