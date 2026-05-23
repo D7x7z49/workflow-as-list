@@ -2,6 +2,20 @@
 
 # workflow-as-list
 
+> [!CAUTION]
+> This project is at `v0` stage.
+> It is for **research** and **discussion** only.
+> Do not use it in production.
+>
+> v0 does not follow Semantic Versioning.
+> Breaking changes can happen at any commit.
+> If you are not a developer of this project,
+> expect things to break often.
+>
+> The first stable release will be `v1`.
+
+---
+
 WORKFLOWASLIST is a language to describe agent task workflows.
 Its syntax is [SYNTAX.ebnf](./SYNTAX.ebnf).
 

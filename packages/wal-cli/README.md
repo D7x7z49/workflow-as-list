@@ -2,6 +2,14 @@
 
 # d49-wal-cli
 
+> [!CAUTION]
+> This project is at `v0` stage.
+> Breaking changes happen often.
+> Do not use in production.
+> Full disclaimer: <https://github.com/D7x7z49/workflow-as-list> link.
+
+---
+
 Command line interface for WORKFLOWASLIST.
 
 Install with pipx to keep it isolated:

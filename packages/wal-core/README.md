@@ -2,6 +2,14 @@
 
 # d49-wal-core
 
+> [!CAUTION]
+> This project is at `v0` stage.
+> Breaking changes happen often.
+> Do not use in production.
+> Full disclaimer: <https://github.com/D7x7z49/workflow-as-list> link.
+
+---
+
 Parser for WORKFLOWASLIST.
 Reads workflow files and produces a structured representation for execution.
 
