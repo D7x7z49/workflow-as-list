@@ -10,7 +10,6 @@ authors = [
 keywords = ["workflow", "agent", "task", "cli"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
@@ -18,11 +17,11 @@ classifiers = [
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
 dependencies = [
-    "pydantic-ai>=1.94.0",
+"pydantic-ai>=1.94.0",
     "typer>=0.25.1",
     "d49-wal-core",
     "d49-wal-runtime",
-]
+    ]
 
 [project.urls]
 Repository = "https://github.com/D7x7z49/workflow-as-list"
