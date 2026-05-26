@@ -14,6 +14,7 @@ from openai.types.chat import (
     ChatCompletionToolUnionParam,
 )
 
+from wal_cli.agent.constants import ANTHROPIC_DEFAULT_MAX_TOKENS
 from wal_cli.agent.schema import AgentConfig
 from wal_cli.agent.schema.message import Message, ReplyMessage, TextContent, ToolCallContent, ToolMessage, Usage
 from wal_cli.agent.schema.provider import ProviderInfo
@@ -163,6 +164,7 @@ def generate_by_anthropic(
 ) -> ReplyMessage:
     msgs = transform_messages_to_anthropic(messages)
     create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
+    create_kwargs.setdefault("max_tokens", ANTHROPIC_DEFAULT_MAX_TOKENS)
     if tools is not None:
         create_kwargs["tools"] = tools
     response = client.messages.create(**create_kwargs)
@@ -176,7 +178,20 @@ def generate_with_format_by_openai(
     messages: list[Message],
     response_format: type[BaseModel],
     **kwargs,
-) -> ReplyMessage: ...
+) -> tuple[ReplyMessage, BaseModel | None]:
+    msgs = transform_messages_to_openai(messages)
+    create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
+
+    # parse() wraps create() with response_format -> JSON schema conversion
+    # and post-parses message.content into message.parsed (Pydantic model).
+    # ParsedChatCompletion extends ChatCompletion, so reply_from_openai handles
+    # content extraction identically to the non-format path.
+    response = client.chat.completions.parse(
+        **create_kwargs,
+        response_format=response_format,
+    )
+    parsed = response.choices[0].message.parsed
+    return reply_from_openai(response, info), parsed
 
 
 def generate_with_format_by_anthropic(
@@ -186,7 +201,20 @@ def generate_with_format_by_anthropic(
     messages: list[Message],
     response_format: type[BaseModel],
     **kwargs,
-) -> ReplyMessage: ...
+) -> tuple[ReplyMessage, BaseModel | None]:
+    msgs = transform_messages_to_anthropic(messages)
+    create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
+    create_kwargs.setdefault("max_tokens", ANTHROPIC_DEFAULT_MAX_TOKENS)
+
+    # parse() wraps create() with output_format → JSON schema conversion
+    # and returns ParsedMessage which contains both the raw message and parsed model
+    response = client.messages.parse(
+        **create_kwargs,
+        output_format=response_format,
+    )
+
+    parsed = response.parsed_output
+    return reply_from_anthropic(response, info), parsed
 
 
 class LLM:

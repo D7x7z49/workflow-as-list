@@ -32,6 +32,12 @@ class CalculatorParams(BaseModel):
     b: int = Field(description="Right operand of binary addition")
 
 
+class SumResult(BaseModel):
+    """Structured output: the result of an addition."""
+
+    result: int
+
+
 OPENAI_CALCULATOR_TOOL = pydantic_function_tool(CalculatorParams, name="calculator")
 
 ANTHROPIC_CALCULATOR_TOOL = {
@@ -94,6 +100,24 @@ class TestLLMOpenAIGenerate:
         assert reply2.usage.output > 0
 
 
+class TestLLMOpenAIGenerateWithFormat:
+    """Integration tests for LLM.generate_with_format via OpenAI-compatible API."""
+
+    def test_structured_output(self, openai_compatible_llm):
+        """Request structured JSON output and verify parsed model."""
+        query = QueryMessage(content=[TextContent(text='Compute 2+2. Respond with JSON: {"result": <number>}.')])
+        reply, parsed = openai_compatible_llm.generate_with_format([query], response_format=SumResult)
+
+        _assert_reply(reply, TextContent)
+        assert reply.usage is not None
+        assert reply.usage.input > 0
+        assert reply.usage.output > 0
+
+        # Verify structured output is properly parsed.
+        assert isinstance(parsed, SumResult)
+        assert parsed.result == 4, f"Expected result=4, got {parsed.result}"
+
+
 class TestLLMAnthropicGenerate:
     """Round-trip integration tests for LLM.generate via Anthropic-compatible API."""
 
@@ -130,3 +154,23 @@ class TestLLMAnthropicGenerate:
         assert reply2.usage is not None
         assert reply2.usage.input > 0
         assert reply2.usage.output > 0
+
+
+class TestLLMAnthropicGenerateWithFormat:
+    """Integration tests for LLM.generate_with_format via Anthropic-compatible API."""
+
+    def test_structured_output(self, anthropic_compatible_llm):
+        """Request structured JSON output and verify parsed model."""
+        query = QueryMessage(content=[TextContent(text='Compute 2+2. Respond with JSON: {"result": <number>}.')])
+        reply, parsed = anthropic_compatible_llm.generate_with_format(
+            [query], response_format=SumResult, max_tokens=1024
+        )
+
+        _assert_reply(reply, TextContent)
+        assert reply.usage is not None
+        assert reply.usage.input > 0
+        assert reply.usage.output > 0
+
+        # Verify structured output is properly parsed.
+        assert isinstance(parsed, SumResult)
+        assert parsed.result == 4, f"Expected result=4, got {parsed.result}"
