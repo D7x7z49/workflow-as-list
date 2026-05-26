@@ -10,6 +10,7 @@ from wal_runtime.schema import WhiteList
 from wal_runtime.util import WorkflowExecutor
 from wal_cli.agent.schema import AgentConfig, MemoryConfig
 from wal_cli.agent.schema.provider import (
+    AnthropicCompatibleProvider,
     ModelConfig,
     ModelContextInfo,
     OpenAICompatibleProvider,
@@ -161,3 +162,34 @@ def openai_compatible_llm():
 
     agent_config = _build_agent_config(provider)
     return _build_test_llm(agent_config, identity=f"test:{model}")
+
+
+@pytest.fixture
+def anthropic_compatible_llm():
+    """Provide an LLM instance configured for an Anthropic-compatible API.
+
+    Env vars: TEST_ANTHROPIC_BASE_URL, TEST_ANTHROPIC_API_KEY, TEST_ANTHROPIC_MODEL.
+    Skips the test if any variable is missing.
+    """
+    base_url = os.environ.get("TEST_ANTHROPIC_BASE_URL")
+    api_key = os.environ.get("TEST_ANTHROPIC_API_KEY")
+    model = os.environ.get("TEST_ANTHROPIC_MODEL")
+
+    if base_url is None or api_key is None or model is None:
+        pytest.skip(
+            "TEST_ANTHROPIC_BASE_URL, TEST_ANTHROPIC_API_KEY, TEST_ANTHROPIC_MODEL environment variables are required"
+        )
+
+    provider = AnthropicCompatibleProvider(
+        adapter=ProviderAdapter.ANTHROPIC_COMPATIBLE,
+        base_url=base_url,
+        api_key=api_key,
+        models={
+            model: ModelConfig(
+                context=ModelContextInfo(max_tokens=4096),
+            )
+        },
+    )
+
+    agent_config = _build_agent_config(provider, provider_id="anthropic")
+    return _build_test_llm(agent_config, identity=f"anthropic:{model}")

@@ -1,12 +1,18 @@
-# test/wal_cli/agent/test_llm_openai.integration.test.py
-"""Integration tests for LLM.generate via OpenAI-compatible API.
+# test/wal_cli/agent/test_util_llm.integration.test.py
+"""Integration tests for LLM.generate via OpenAI and Anthropic APIs.
 
-Requires environment variables:
+OpenAI-compatible requires:
 - TEST_OPENAI_BASE_URL
 - TEST_OPENAI_API_KEY
 - TEST_OPENAI_MODEL
+
+Anthropic-compatible requires:
+- TEST_ANTHROPIC_BASE_URL
+- TEST_ANTHROPIC_API_KEY
+- TEST_ANTHROPIC_MODEL
 """
 
+from anthropic import transform_schema
 from openai import pydantic_function_tool
 from pydantic import BaseModel, Field
 
@@ -26,7 +32,13 @@ class CalculatorParams(BaseModel):
     b: int = Field(description="Right operand of binary addition")
 
 
-CALCULATOR_TOOL = pydantic_function_tool(CalculatorParams, name="calculator")
+OPENAI_CALCULATOR_TOOL = pydantic_function_tool(CalculatorParams, name="calculator")
+
+ANTHROPIC_CALCULATOR_TOOL = {
+    "name": "calculator",
+    "description": "Add two integers and return the sum.",
+    "input_schema": transform_schema(CalculatorParams),
+}
 
 
 def _assert_reply(reply, expected_type):
@@ -45,29 +57,24 @@ def _compute_calculator_result(tool_call: ToolCallContent) -> int:
 
 
 class TestLLMOpenAIGenerate:
-    """Round-trip integration tests for LLM.generate over real API."""
+    """Round-trip integration tests for LLM.generate via OpenAI-compatible API."""
 
     def test_two_round_tool_call(self, openai_compatible_llm):
         """Two-round conversation: request tool call, then return tool result."""
-        # Round 1: ask model to call calculator tool for 2+2
         query = QueryMessage(content=[TextContent(text="Use the calculator tool to compute 2+2.")])
-        reply1 = openai_compatible_llm.generate([query], tools=[CALCULATOR_TOOL])
+        reply1 = openai_compatible_llm.generate([query], tools=[OPENAI_CALCULATOR_TOOL])
 
         _assert_reply(reply1, ToolCallContent)
 
-        # gather usage from round 1
         assert reply1.usage is not None
         assert reply1.usage.input > 0
         assert reply1.usage.output > 0
 
-        # extract the first tool call (some models also emit text blocks)
         tool_call = next(block for block in reply1.content if isinstance(block, ToolCallContent))
-        assert isinstance(tool_call, ToolCallContent)
         assert tool_call.name == "calculator"
 
         result = _compute_calculator_result(tool_call)
 
-        # Round 2: send tool result back
         tool_msg = ToolMessage(
             call_id=tool_call.id,
             call_name=tool_call.name,
@@ -77,14 +84,49 @@ class TestLLMOpenAIGenerate:
         messages = [query, reply1, tool_msg]
         reply2 = openai_compatible_llm.generate(messages)
 
-        # model should now reply with text content
         _assert_reply(reply2, TextContent)
 
-        # final reply should mention the result
         final_text = reply2.content[0].text
         assert "4" in final_text, f"Expected '4' in final reply, got: {final_text}"
 
-        # usage for round 2
+        assert reply2.usage is not None
+        assert reply2.usage.input > 0
+        assert reply2.usage.output > 0
+
+
+class TestLLMAnthropicGenerate:
+    """Round-trip integration tests for LLM.generate via Anthropic-compatible API."""
+
+    def test_two_round_tool_call(self, anthropic_compatible_llm):
+        """Two-round conversation: request tool call, then return tool result."""
+        query = QueryMessage(content=[TextContent(text="Use the calculator tool to compute 2+2.")])
+        reply1 = anthropic_compatible_llm.generate([query], tools=[ANTHROPIC_CALCULATOR_TOOL], max_tokens=1024)
+
+        _assert_reply(reply1, ToolCallContent)
+
+        assert reply1.usage is not None
+        assert reply1.usage.input > 0
+        assert reply1.usage.output > 0
+
+        tool_call = next(block for block in reply1.content if isinstance(block, ToolCallContent))
+        assert tool_call.name == "calculator"
+
+        result = _compute_calculator_result(tool_call)
+
+        tool_msg = ToolMessage(
+            call_id=tool_call.id,
+            call_name=tool_call.name,
+            content=[TextContent(text=str(result))],
+            success=True,
+        )
+        messages = [query, reply1, tool_msg]
+        reply2 = anthropic_compatible_llm.generate(messages, max_tokens=1024)
+
+        _assert_reply(reply2, TextContent)
+
+        final_text = reply2.content[0].text
+        assert "4" in final_text, f"Expected '4' in final reply, got: {final_text}"
+
         assert reply2.usage is not None
         assert reply2.usage.input > 0
         assert reply2.usage.output > 0

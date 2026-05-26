@@ -1,10 +1,12 @@
 # packages/wal-cli/src/wal_cli/agent/util.py
 
+import json
 from typing import Iterable
 
 from pydantic import BaseModel
 from anthropic import Anthropic
 from anthropic.types.message_param import MessageParam
+from anthropic.types.tool_union_param import ToolUnionParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from openai import OpenAI
 from openai.types.chat import (
@@ -79,13 +81,13 @@ def reply_from_openai(response, info: ProviderInfo) -> ReplyMessage:
     # OpenAPI spec) and adjust field access patterns here.
     #
     # TODO: guard response.usage with per-provider field mapping.
+    prompt_tokens_details = response.usage.prompt_tokens_details
+    cached_tokens = (prompt_tokens_details.cached_tokens or 0) if prompt_tokens_details else 0
     usage = Usage(
         input=response.usage.prompt_tokens,
         output=response.usage.completion_tokens,
         context=response.usage.total_tokens,
-        cached=getattr(response.usage.prompt_tokens_details, "cached_tokens", 0)
-        if response.usage and response.usage.prompt_tokens_details
-        else 0,
+        cached=cached_tokens,
     )
 
     return ReplyMessage(
@@ -96,7 +98,43 @@ def reply_from_openai(response, info: ProviderInfo) -> ReplyMessage:
     )
 
 
-def reply_from_anthropic(response, info: ProviderInfo) -> ReplyMessage: ...
+def reply_from_anthropic(response, info: ProviderInfo) -> ReplyMessage:
+    # Build content list from response content blocks
+    content = []
+    for block in response.content:
+        if block.type == "text":
+            content.append(TextContent(text=block.text))
+        elif block.type == "tool_use":
+            content.append(
+                ToolCallContent(
+                    id=block.id,
+                    name=block.name,
+                    arguments=json.dumps(block.input) if block.input else "",
+                )
+            )
+
+    # Build usage info.
+    #
+    # NOTE: cache_read_input_tokens and cache_creation_input_tokens are
+    # Optional[int] defaulting to None when no cache is hit. The `or 0`
+    # fallback keeps the math safe but may silently mask an unexpected None
+    # that should have been a real integer. If cache stats matter for
+    # billing or debugging, consider surfacing None explicitly.
+    cache_read_input_tokens = response.usage.cache_read_input_tokens or 0
+    cache_creation_input_tokens = response.usage.cache_creation_input_tokens or 0
+    usage = Usage(
+        input=response.usage.input_tokens,
+        output=response.usage.output_tokens,
+        context=response.usage.input_tokens + response.usage.output_tokens,
+        cached=cache_read_input_tokens + cache_creation_input_tokens,
+    )
+
+    return ReplyMessage(
+        content=content,
+        usage=usage,
+        model=f"{info.provider_id}:{info.model_id}",
+        refusal=None,  # Anthropic doesn't have a direct refusal field like OpenAI
+    )
 
 
 def generate_by_openai(
@@ -120,9 +158,15 @@ def generate_by_anthropic(
     *,
     client: Anthropic,
     messages: list[Message],
-    tools: list[type[BaseModel]] | None = None,
+    tools: Iterable[ToolUnionParam] | None = None,
     **kwargs,
-) -> ReplyMessage: ...
+) -> ReplyMessage:
+    msgs = transform_messages_to_anthropic(messages)
+    create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
+    if tools is not None:
+        create_kwargs["tools"] = tools
+    response = client.messages.create(**create_kwargs)
+    return reply_from_anthropic(response, info)
 
 
 def generate_with_format_by_openai(
