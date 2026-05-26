@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 from wal_cli.agent.schema.message import (
     Usage,
     ContentType,
-    BaseContent,
     ToolCallContent,
     TextContent,
     MessageRole,
@@ -31,7 +30,6 @@ from wal_cli.agent.schema.provider import (
 __all__ = [
     "Usage",
     "ContentType",
-    "BaseContent",
     "ToolCallContent",
     "TextContent",
     "MessageRole",

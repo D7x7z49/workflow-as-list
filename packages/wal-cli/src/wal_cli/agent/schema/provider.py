@@ -16,7 +16,7 @@ class ModelContextInfo(BaseModel):
 
 class ModelConfig(BaseModel):
     context: ModelContextInfo
-    info_id: str  # openrouter id: <https://openrouter.ai/api/v1/models?output_modalities=all>
+    # info_id: str  # openrouter id: <https://openrouter.ai/api/v1/models?output_modalities=all>
 
 
 class ProviderAdapter(str, Enum):
@@ -80,3 +80,10 @@ ProviderConfig = Annotated[
     ],
     Field(discriminator="adapter"),
 ]
+
+
+class ProviderInfo(BaseModel):
+    provider_id: str
+    provider: ProviderConfig
+    model_id: str
+    model: ModelConfig
