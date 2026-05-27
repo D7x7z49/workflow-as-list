@@ -82,7 +82,7 @@ def reply_from_openai(response, info: ProviderInfo) -> ReplyMessage:
                 )
             )
 
-    if message.reasoning_content:
+    if getattr(message, "reasoning_content", None):
         content.append(ThinkingContent(thinking=message.reasoning_content))
 
     # Build usage info.
@@ -251,11 +251,12 @@ class LLM:
 
         self.client = self.info.provider.get_client()
 
-    def generate(self, messages: list[Message], **kwargs):
+    def generate(self, messages: list[Message], **kwargs) -> ReplyMessage:
         if isinstance(self.client, OpenAI):
             return generate_by_openai(self.info, client=self.client, messages=messages, **kwargs)
         elif isinstance(self.client, Anthropic):
             return generate_by_anthropic(self.info, client=self.client, messages=messages, **kwargs)
+        raise ValueError(f"unsupported client type: {type(self.client)}")
 
     def generate_with_format(self, messages: list[Message], response_format: type[BaseModel], **kwargs):
         if isinstance(self.client, OpenAI):

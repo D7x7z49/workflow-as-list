@@ -19,7 +19,7 @@ from wal_core.util import parse_line
 @pytest.fixture
 def module() -> WorkflowModule:
     return WorkflowModule(
-        path=ImportPathAdapter.validate_python("file:///test.wal"),
+        path=ImportPathAdapter.validate_python("http://example.com/test.wal"),
         namespace="0" * 64,
     )
 
@@ -34,7 +34,7 @@ def module() -> WorkflowModule:
         ("   ", EmptyLine),
         ("# comment", CommentLine),
         ("  # indented", CommentLine),
-        ("> (alias)file:///path", ImportLine),
+        ("> (alias)http://example.com/path", ImportLine),
         (": name = value", VariableLine),
         ("- plain", StepLine),
         ("- !shell", StepLine),
@@ -50,7 +50,7 @@ def test_line_type(module, line, expected_type):
 
 
 def test_import_alias_and_path(module):
-    result = parse_line(module, "> (lib)file:///lib.wal", 1)
+    result = parse_line(module, "> (lib)http://example.com/lib.wal", 1)
     assert isinstance(result, ImportLine)
     assert result.alias == "lib"
 
@@ -104,7 +104,7 @@ def test_substitution_missing_closing_brace(module):
     "line,error_msg",
     [
         ("unknown line", "prefix not found"),
-        ("  > (a)file:///path", "Import lines must be at top level"),
+        ("  > (a)http://example.com/path", "Import lines must be at top level"),
         ("> (a/path", "import line must end with '\\)'"),
         ("  : x = a", "Variable lines must be at top level"),
         (": x a", "variable line must contain '='"),
@@ -122,7 +122,7 @@ def test_parse_errors(module, line, error_msg):
 # Label map
 # ------------------------------------------------------------------
 def test_label_map_entries(module):
-    parse_line(module, "> (mod)file:///mod", 1)
+    parse_line(module, "> (mod)http://example.com/mod", 1)
     parse_line(module, "- (step1) do", 2)
     parse_line(module, ": var = x", 3)
     assert "mod" in module.label_map
@@ -139,6 +139,6 @@ def test_duplicate_tag_raises(module):
 
 
 def test_duplicate_import_alias_raises(module):
-    parse_line(module, "> (alias)file:///a", 1)
+    parse_line(module, "> (alias)http://example.com/a", 1)
     with pytest.raises(ValueError, match="Duplicate import alias"):
-        parse_line(module, "> (alias)file:///b", 2)
+        parse_line(module, "> (alias)http://example.com/b", 2)

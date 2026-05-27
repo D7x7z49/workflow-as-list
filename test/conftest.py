@@ -81,7 +81,7 @@ def make_module(name: str, namespace: Optional[str] = None) -> WorkflowModule:
         if len(namespace) != 64 or not all(c in "0123456789abcdefABCDEF" for c in namespace):
             namespace = hashlib.sha256(name.encode()).hexdigest()
     return WorkflowModule(
-        path=ImportPathAdapter.validate_python(f"file:///{name}"),
+        path=ImportPathAdapter.validate_python(f"http://example.com/{name}"),
         namespace=namespace,
     )
 

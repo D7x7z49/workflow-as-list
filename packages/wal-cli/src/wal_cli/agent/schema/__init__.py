@@ -78,7 +78,7 @@ class AgentSpec(BaseModel):
         file_path = agent_dir / f"{self.id}.agent.json"
         data = {
             "$schema": schema_path.as_uri(),
-            **self.model_dump(),
+            **self.model_dump(mode="json"),
         }
         file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
         return file_path

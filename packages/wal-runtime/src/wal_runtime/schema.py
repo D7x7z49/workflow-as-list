@@ -1,6 +1,8 @@
 # packages/wal-runtime/src/wal_runtime/schema.py
 
 
+import json
+from pathlib import Path
 import traceback
 from enum import Enum
 from datetime import datetime
@@ -77,6 +79,20 @@ class RunMeta(BaseModel):
     module_hash: SHA256Hash
     status: RunStatus = Field(default=RunStatus.TODO)
     created_at: datetime = Field(default_factory=datetime.now)
+
+    @classmethod
+    def from_json_str(cls, data: str) -> Optional["RunMeta"]:
+        raw = json.loads(data)
+        module_path = raw.get("module_path", None)
+        if module_path is None:
+            return None
+
+        if "://" not in module_path:
+            module_path = Path(module_path)
+            if not module_path.exists():
+                return None
+
+        return cls.model_validate_json(data)
 
 
 T_RunMeta = TypeVar("T_RunMeta", bound=RunMeta)

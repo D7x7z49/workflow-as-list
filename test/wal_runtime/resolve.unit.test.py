@@ -94,7 +94,7 @@ def test_get_line_value_step_not_executed(env):
 
 
 def test_get_line_value_import_raises(env):
-    imp = ImportLine(alias="mod", path=ImportPathAdapter.validate_python("file:///dummy"), lineno=1)
+    imp = ImportLine(alias="mod", path=ImportPathAdapter.validate_python("http://example.com/dummy"), lineno=1)
     with pytest.raises(ValueError, match="Cannot use import alias"):
         get_line_value(env, imp, "mod")
 

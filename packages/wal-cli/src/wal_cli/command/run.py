@@ -1,6 +1,5 @@
 # packages/wal-cli/src/wal_cli/command/run.py
 
-import bisect
 import hashlib
 from uuid import uuid4
 
@@ -112,8 +111,10 @@ def list_runs(
             line = line.strip()
             if not line:
                 continue
-            data = CLI_RunMeta.model_validate_json(line)
-            bisect.insort(runs, data, key=lambda r: r.created_at)
+            data = CLI_RunMeta.from_json_str(line)
+            if data is None:
+                typer.echo(f"[?] [skip] {line}")
+                continue
             if len(runs) > limit:
                 runs.pop(0) if reverse else runs.pop()
 
@@ -137,13 +138,16 @@ def show_run(
         typer.echo("no runs found")
         return
 
-    run_meta: CLI_RunMeta | None = None
+    run_meta = None
     with RUNS_MAP_FILE.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            data = CLI_RunMeta.model_validate_json(line)
+            data = CLI_RunMeta.from_json_str(line)
+            if data is None:
+                typer.echo(f"[?] [skip] {line}")
+                continue
             if data.run_id == id or data.run_id[:ID_PREFIX_LENGTH] == id:
                 run_meta = data
 
