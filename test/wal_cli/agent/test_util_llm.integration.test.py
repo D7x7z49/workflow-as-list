@@ -148,7 +148,7 @@ class TestLLMAnthropicGenerate:
 
         _assert_reply(reply2, TextContent)
 
-        final_text = reply2.content[0].text
+        final_text = next(block.text for block in reply2.content if isinstance(block, TextContent))
         assert "4" in final_text, f"Expected '4' in final reply, got: {final_text}"
 
         assert reply2.usage is not None

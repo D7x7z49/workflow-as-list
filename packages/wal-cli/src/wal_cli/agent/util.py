@@ -16,16 +16,24 @@ from openai.types.chat import (
 
 from wal_cli.agent.constants import ANTHROPIC_DEFAULT_MAX_TOKENS
 from wal_cli.agent.schema import AgentConfig
-from wal_cli.agent.schema.message import Message, ReplyMessage, TextContent, ToolCallContent, ToolMessage, Usage
+from wal_cli.agent.schema.message import (
+    Message,
+    ReplyMessage,
+    TextContent,
+    ThinkingContent,
+    ToolCallContent,
+    ToolMessage,
+    Usage,
+)
 from wal_cli.agent.schema.provider import ProviderInfo
 
 
-def transform_messages_to_openai(messages: list[Message]) -> Iterable[ChatCompletionMessageParam]:
-    data = [message.to_openai() for message in messages]
+def transform_messages_to_openai(messages: list[Message], info: ProviderInfo) -> Iterable[ChatCompletionMessageParam]:
+    data = [message.to_openai(info) for message in messages]
     return data
 
 
-def transform_messages_to_anthropic(messages: list[Message]) -> Iterable[MessageParam]:
+def transform_messages_to_anthropic(messages: list[Message], info: ProviderInfo) -> Iterable[MessageParam]:
     data = []
     tools_result = []
 
@@ -46,7 +54,7 @@ def transform_messages_to_anthropic(messages: list[Message]) -> Iterable[Message
             )
         else:
             flush_tool_message()
-            data.append(msg.to_anthropic())
+            data.append(msg.to_anthropic(info))
 
     flush_tool_message()
     return data
@@ -74,6 +82,9 @@ def reply_from_openai(response, info: ProviderInfo) -> ReplyMessage:
                 )
             )
 
+    if message.reasoning_content:
+        content.append(ThinkingContent(thinking=message.reasoning_content))
+
     # Build usage info.
     #
     # NOTE: response.usage may differ across OpenAI-compatible providers.
@@ -94,7 +105,8 @@ def reply_from_openai(response, info: ProviderInfo) -> ReplyMessage:
     return ReplyMessage(
         content=content,
         usage=usage,
-        model=f"{info.provider_id}:{info.model_id}",
+        provider=info.provider_id,
+        model=info.model_id,
         refusal=message.refusal,
     )
 
@@ -113,6 +125,10 @@ def reply_from_anthropic(response, info: ProviderInfo) -> ReplyMessage:
                     arguments=json.dumps(block.input) if block.input else "",
                 )
             )
+        elif block.type == "thinking":
+            content.append(ThinkingContent(thinking=block.thinking, thinkingSignature=block.signature))
+        elif block.type == "redacted_thinking":
+            content.append(ThinkingContent(thinking="", thinkingSignature=block.data, redacted=True))
 
     # Build usage info.
     #
@@ -133,7 +149,8 @@ def reply_from_anthropic(response, info: ProviderInfo) -> ReplyMessage:
     return ReplyMessage(
         content=content,
         usage=usage,
-        model=f"{info.provider_id}:{info.model_id}",
+        provider=info.provider_id,
+        model=info.model_id,
         refusal=None,  # Anthropic doesn't have a direct refusal field like OpenAI
     )
 
@@ -146,7 +163,7 @@ def generate_by_openai(
     tools: Iterable[ChatCompletionToolUnionParam] | None = None,
     **kwargs,
 ) -> ReplyMessage:
-    msgs = transform_messages_to_openai(messages)
+    msgs = transform_messages_to_openai(messages, info)
     create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
     if tools is not None:
         create_kwargs["tools"] = tools
@@ -162,7 +179,7 @@ def generate_by_anthropic(
     tools: Iterable[ToolUnionParam] | None = None,
     **kwargs,
 ) -> ReplyMessage:
-    msgs = transform_messages_to_anthropic(messages)
+    msgs = transform_messages_to_anthropic(messages, info)
     create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
     create_kwargs.setdefault("max_tokens", ANTHROPIC_DEFAULT_MAX_TOKENS)
     if tools is not None:
@@ -179,7 +196,7 @@ def generate_with_format_by_openai(
     response_format: type[BaseModel],
     **kwargs,
 ) -> tuple[ReplyMessage, BaseModel | None]:
-    msgs = transform_messages_to_openai(messages)
+    msgs = transform_messages_to_openai(messages, info)
     create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
 
     # parse() wraps create() with response_format -> JSON schema conversion
@@ -202,7 +219,7 @@ def generate_with_format_by_anthropic(
     response_format: type[BaseModel],
     **kwargs,
 ) -> tuple[ReplyMessage, BaseModel | None]:
-    msgs = transform_messages_to_anthropic(messages)
+    msgs = transform_messages_to_anthropic(messages, info)
     create_kwargs = {"model": info.model_id, "messages": msgs, **kwargs}
     create_kwargs.setdefault("max_tokens", ANTHROPIC_DEFAULT_MAX_TOKENS)
 

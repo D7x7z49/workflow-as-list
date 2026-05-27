@@ -3,7 +3,7 @@
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union, cast
 from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
@@ -11,14 +11,16 @@ from anthropic.types.message_param import MessageParam
 from anthropic.types.text_block_param import TextBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
+from anthropic.types.thinking_block_param import ThinkingBlockParam
+from anthropic.types.redacted_thinking_block_param import RedactedThinkingBlockParam
 from openai.types.chat import (
     ChatCompletionContentPartTextParam,
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
-    ChatCompletionAssistantMessageParam,
     ChatCompletionToolMessageParam,
     ChatCompletionMessageToolCallParam,
 )
+from wal_cli.agent.schema.provider import ProviderInfo
 
 
 class Usage(BaseModel):
@@ -31,6 +33,7 @@ class Usage(BaseModel):
 class ContentType(str, Enum):
     CALL = "call"
     TEXT = "text"
+    THINK = "think"
 
 
 class TextContent(BaseModel):
@@ -69,6 +72,34 @@ class ToolCallContent(BaseModel):
         )
 
 
+class ThinkingContent(BaseModel):
+    block: Literal[ContentType.THINK] = ContentType.THINK
+    thinking: str
+    thinkingSignature: Optional[str] = None
+    redacted: Optional[bool] = None
+
+    def to_openai(self) -> Union[str, None]:
+        if self.redacted or self.thinkingSignature or not self.thinking:
+            return None
+        return self.thinking
+
+    def to_anthropic(self) -> Union[TextBlockParam, ThinkingBlockParam, RedactedThinkingBlockParam, None]:
+        if self.redacted:
+            if not self.thinkingSignature:
+                # redacted thinking requires thinkingSignature
+                return None
+            return RedactedThinkingBlockParam(type="redacted_thinking", data=self.thinkingSignature)
+
+        if not self.thinking or not self.thinking.strip():
+            # empty thinking content
+            return None
+
+        if not self.thinkingSignature or not self.thinkingSignature.strip():
+            return TextBlockParam(type="text", text=self.thinking)
+
+        return ThinkingBlockParam(type="thinking", thinking=self.thinking, signature=self.thinkingSignature)
+
+
 class MessageRole(str, Enum):
     QUERY = "query"
     REPLY = "reply"
@@ -79,52 +110,69 @@ class BaseMessage(BaseModel, ABC):
     timestamp: int = Field(default_factory=lambda: int(datetime.now(timezone.utc).timestamp()))
 
     @abstractmethod
-    def to_anthropic(self) -> MessageParam: ...
+    def to_anthropic(self, info: ProviderInfo) -> MessageParam: ...
 
     @abstractmethod
-    def to_openai(self) -> ChatCompletionMessageParam: ...
+    def to_openai(self, info: ProviderInfo) -> ChatCompletionMessageParam: ...
 
 
 class QueryMessage(BaseMessage):
     role: Literal[MessageRole.QUERY] = MessageRole.QUERY
     content: list[TextContent]
 
-    def to_openai(self) -> ChatCompletionMessageParam:
+    def to_openai(self, _) -> ChatCompletionMessageParam:
         return ChatCompletionUserMessageParam(role="user", content=[block.to_openai() for block in self.content])
 
-    def to_anthropic(self) -> MessageParam:
+    def to_anthropic(self, _) -> MessageParam:
         return MessageParam(role="user", content=[block.to_anthropic() for block in self.content])
 
 
 class ReplyMessage(BaseMessage):
     role: Literal[MessageRole.REPLY] = MessageRole.REPLY
-    content: list[TextContent | ToolCallContent]
+    content: list[TextContent | ToolCallContent | ThinkingContent]
     usage: Usage
 
     # model id, fommat: provider_name:model_name
+    provider: str
     model: str
 
     # only openai fields
     refusal: Optional[str] = None
 
-    def to_openai(self) -> ChatCompletionMessageParam:
-        text_blocks = [block.to_openai() for block in self.content if isinstance(block, TextContent)]
-        tool_calls = [block.to_openai() for block in self.content if isinstance(block, ToolCallContent)]
+    def to_openai(self, info: ProviderInfo) -> ChatCompletionMessageParam:
+        msg: dict = {"role": "assistant"}
 
-        msg = ChatCompletionAssistantMessageParam(
-            role="assistant",
-            content=text_blocks if text_blocks else None,
-            refusal=self.refusal,
-        )
+        # text_blocks = [block.to_openai() for block in self.content if isinstance(block, TextContent)]
+        # tool_calls = [block.to_openai() for block in self.content if isinstance(block, ToolCallContent)]
+        # thinking = [block.to_openai() for block in self.content if isinstance(block, ThinkingContent)]
+        # thinking = [block for block in thinking if block is not None]
+        text_blocks = []
+        tool_call_blocks = []
+        thinking_blocks = []
+        for block in self.content:
+            if isinstance(block, TextContent):
+                text_blocks.append(block.to_openai())
+            elif isinstance(block, ToolCallContent):
+                tool_call_blocks.append(block.to_openai())
+            elif isinstance(block, ThinkingContent):
+                data = block.to_openai()
+                if data is None:
+                    continue
+                thinking_blocks.append(block.to_openai())
 
-        if tool_calls:
-            msg["tool_calls"] = tool_calls
+        if text_blocks:
+            msg["content"] = text_blocks
+        if tool_call_blocks:
+            msg["tool_calls"] = tool_call_blocks
+        if thinking_blocks:
+            msg["reasoning_content"] = "\n".join(thinking_blocks)
         if self.refusal:
             msg["refusal"] = self.refusal
-        return msg
+        return cast(ChatCompletionMessageParam, msg)
 
-    def to_anthropic(self) -> MessageParam:
+    def to_anthropic(self, info: ProviderInfo) -> MessageParam:
         content_blocks = [block.to_anthropic() for block in self.content]
+        content_blocks = [block for block in content_blocks if block is not None]
         return MessageParam(role="assistant", content=content_blocks)
 
 
@@ -135,14 +183,14 @@ class ToolMessage(BaseMessage):
     content: list[TextContent]
     success: bool
 
-    def to_openai(self) -> ChatCompletionMessageParam:
+    def to_openai(self, _) -> ChatCompletionMessageParam:
         return ChatCompletionToolMessageParam(
             role="tool",
             tool_call_id=self.call_id,
             content=[block.to_openai() for block in self.content],
         )
 
-    def to_anthropic(self) -> MessageParam:
+    def to_anthropic(self, _) -> MessageParam:
         return MessageParam(
             role="user",
             content=[
