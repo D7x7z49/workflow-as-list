@@ -6,7 +6,6 @@ from uuid import uuid4
 import typer
 from pydantic import NonNegativeInt
 
-from wal_cli.agent.schema import AgentSpec
 from wal_core.schema import ImportPathAdapter
 from wal_runtime.schema import (
     EventType,
@@ -18,6 +17,7 @@ from wal_runtime.schema import (
 from wal_runtime.hub import WorkflowRuntime
 
 from wal_cli.config.constants import AGENT_ROOT, ROOT, RUNS_ROOT, RUNS_MAP_FILE
+from wal_cli.agent.schema import AgentSpec
 from wal_cli.agent.hub import Agent
 
 from wal_cli.constants import ID_PREFIX_LENGTH
@@ -186,8 +186,3 @@ def show_run(
     else:
         typer.echo("=" * 12)
     typer.echo(f"[#E] [{id}] end ({len(steps)} steps)")
-
-
-@sub_run_option.command()
-def repl() -> None:
-    typer.echo("REPL command not yet implemented")

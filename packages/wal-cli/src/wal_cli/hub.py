@@ -6,6 +6,7 @@ from wal_cli.config.hub import load_config
 from wal_cli.command.config import sub_config_option
 from wal_cli.command.agent import sub_agent_option
 from wal_cli.command.run import sub_run_option
+from wal_cli.command.repl import sub_repl_option
 
 from wal_cli.schema import CommandContext
 
@@ -14,6 +15,7 @@ app = typer.Typer(rich_markup_mode=None, pretty_exceptions_enable=False)
 # Register sub-commands
 app.add_typer(sub_config_option, name="config")
 app.add_typer(sub_agent_option, name="agent")
+app.add_typer(sub_repl_option, name="repl")
 app.add_typer(sub_run_option, name="run")
 
 
