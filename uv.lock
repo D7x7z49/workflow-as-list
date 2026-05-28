@@ -185,7 +185,7 @@ wheels = [
 
 [[package]]
 name = "d49-wal-cli"
-version = "0.1.1rc1"
+version = "0.4.0rc2"
 source = { editable = "packages/wal-cli" }
 dependencies = [
     { name = "anthropic" },
@@ -208,7 +208,7 @@ requires-dist = [
 
 [[package]]
 name = "d49-wal-core"
-version = "0.1.1rc1"
+version = "0.2.0rc2"
 source = { editable = "packages/wal-core" }
 dependencies = [
     { name = "pydantic" },
@@ -219,7 +219,7 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.13.3" }]
 
 [[package]]
 name = "d49-wal-runtime"
-version = "0.1.1rc1"
+version = "0.4.0rc2"
 source = { editable = "packages/wal-runtime" }
 dependencies = [
     { name = "d49-wal-core" },

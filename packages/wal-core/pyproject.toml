@@ -1,7 +1,7 @@
 # packages/wal-core/pyproject.toml
 [project]
 name = "d49-wal-core"
-version = "0.1.1rc1"
+version = "0.2.0rc2"
 description = "Python parser implementation for D7x7z49/workflow-as-list."
 readme = "README.md"
 authors = [
