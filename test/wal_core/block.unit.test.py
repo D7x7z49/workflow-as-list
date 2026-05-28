@@ -8,7 +8,7 @@ from wal_core.util import build_block_from_step, build_root_block
 
 def fake_module() -> WorkflowModule:
     return WorkflowModule(
-        path=ImportPathAdapter.validate_python("file:///x"),
+        path=ImportPathAdapter.validate_python("http://example.com/x"),
         namespace="0" * 64,
     )
 

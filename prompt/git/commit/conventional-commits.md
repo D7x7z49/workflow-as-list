@@ -37,6 +37,11 @@ body = eol, body_entries ;
 body_entries = body_entry, { body_entry } ;
 body_entry   = "- ", line ;
 
+(*
+  Each body entry is exactly one line. Do not wrap.
+  Split long points into shorter entries.
+*)
+
 (* ========================================================================= *)
 (* FOOTER                                                                     *)
 (* ========================================================================= *)

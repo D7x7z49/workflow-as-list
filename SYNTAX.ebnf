@@ -13,6 +13,15 @@
    - Practical. Set Theory. Bounded scope, minimal complete.
    - Elegant. Logical Flow. Logical coherence, consistent ordering.
    - Uniform. Text Stream. All content is text, identical syntax for same things.
+
+   GUIDANCE.
+   - One line. One step.
+   - One step. One job only.
+   - For LLM steps. Keep text short.
+     If more detail is needed, write a document. Reference the document from the step.
+   - For shell steps. Do not use pipe, `&&` or `||`.
+     Write a script file instead. Call the script from the step.
+   - Simple steps give better idempotency, easier debugging and clearer maintenance.
 *)
 
 (* ========================================================================= *)

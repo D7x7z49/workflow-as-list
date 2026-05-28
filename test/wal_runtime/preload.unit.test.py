@@ -34,7 +34,7 @@ class TestPreloadModule:
         parse_line(child, ": val = 1", 1)
 
         parent = make_module("preload_parent")
-        parse_line(parent, "> (c)file:///preload_child", 1)
+        parse_line(parent, "> (c)http://example.com/preload_child", 1)
 
         modules = {
             str(parent.path): parent,
@@ -59,8 +59,8 @@ class TestPreloadModule:
         b = make_module("circ_b", namespace="2" * 64)
         from wal_core.util import parse_line
 
-        parse_line(a, "> (b)file:///circ_b", 1)
-        parse_line(b, "> (a)file:///circ_a", 1)
+        parse_line(a, "> (b)http://example.com/circ_b", 1)
+        parse_line(b, "> (a)http://example.com/circ_a", 1)
 
         # A clean root module without imports to start the runtime
         root = make_module("root", namespace="3" * 64)
@@ -88,7 +88,7 @@ class TestPreloadModule:
         mod = make_module("self_import", namespace="s" * 64)
         from wal_core.util import parse_line
 
-        parse_line(mod, "> (self)file:///self_import", 1)
+        parse_line(mod, "> (self)http://example.com/self_import", 1)
 
         # Clean root module
         root = make_module("root", namespace="4" * 64)

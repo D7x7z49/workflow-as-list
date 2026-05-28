@@ -62,3 +62,15 @@ This repository is a Python prototype for WORKFLOWASLIST. It contains three pack
 - [packages/wal-cli](./packages/wal-cli/README.md)
 
 The runtime in packages/wal-runtime can work with Code Agent adapters such as opencode codex as its execution layer.
+
+## Writing WAL
+
+One line. One step. One job.
+
+- Keep each step small and atomic.
+- Do only one thing in each step.
+- For LLM steps. Use short text. If more explanation is needed, write a document and reference it.
+- For shell steps. Do not use pipe, `&&` or `||`. Write a script file instead and call it.
+- Split any step that does more than one job. Reference documents and scripts when needed.
+
+This approach creates clear, maintainable and debuggable workflows.

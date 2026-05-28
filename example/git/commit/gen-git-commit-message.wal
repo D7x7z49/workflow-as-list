@@ -1,5 +1,31 @@
 # example/git/commit/gen-git-commit-message.wal
 # Demo: Generate Conventional Commits message from staged diff.
+#
+# Two approaches compared below.
+#
+# === Approach 1: variable substitution (commented out) ===
+#
+#   - (context) ! python scripts/utils/commit_context.py
+#   - (gen) ${context} Write a single Conventional Commits commit message...
+#
+# The shell output is captured into a variable ${context}, then inlined
+# into the prompt. The agent receives a single assembled message — all
+# context is packed into one request. This is like building a message,
+# not being the message list. Each step is self-contained, sharing
+# nothing across step boundaries.
+#
+# === Approach 2: memory accumulation (active) ===
+#
+#   - ! cat prompt/git/commit/conventional-commits.md
+#   - ! git --no-pager diff --staged
+#   - Write a single Conventional Commits commit message...
+#
+# Each - ! step appends its result to agent memory. The plain step
+# inherits all previous context without variable plumbing. The WAL
+# script itself is the message list — steps map 1:1 to entries in
+# the conversation history. Simpler and more faithful to the
+# WAL-as-message-list concept.
 
-- (context) ! python scripts/utils/commit_context.py
-- (gen) ${context} Write a single Conventional Commits commit message for this diff, no explanation.
+- ! cat prompt/git/commit/conventional-commits.md
+- ! git --no-pager diff --staged
+- Write a single Conventional Commits commit message for this diff, no explanation.

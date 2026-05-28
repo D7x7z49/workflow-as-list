@@ -16,8 +16,12 @@ DATA_ROOT = ROOT / "data"
 RUNS_ROOT = DATA_ROOT / "runs"
 RUNS_MAP_FILE = RUNS_ROOT / "runs_map.jsonl"
 
+AGENT_ROOT = ROOT / "agent"
+AGENT_SPEC_SCHEMA_FILE = SCHEMA_ROOT / "agent.schema.json"
+
 DEFAULT_CONFIG_DATA = {
     "$schema": CONFIG_SCHEMA_FILE.as_uri(),
+    "memory": {"enabled": True},
     "white_list": {
         "domain": [],
         "command": [],

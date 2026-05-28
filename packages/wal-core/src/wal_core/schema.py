@@ -15,7 +15,7 @@ SHA256Hash = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$", min_
 SHA256HashAdapter = TypeAdapter(SHA256Hash)
 
 # Type aliases
-ImportPath = Union[FilePath, Annotated[AnyUrl, UrlConstraints(allowed_schemes=["http", "https", "file"])]]
+ImportPath = Union[FilePath, Annotated[AnyUrl, UrlConstraints(allowed_schemes=["http", "https"])]]
 ImportPathAdapter = TypeAdapter(ImportPath)
 
 
